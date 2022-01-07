@@ -8,16 +8,16 @@
  * T -- expiration time
  * S -- stock price
  * K -- strike price
- * q -- dividend yield
  * n -- height of the binomial tree
  * 
  * Source: https://en.wikipedia.org/wiki/Binomial_options_pricing_model
  */
-double americanPut(uint16_t T, double S, double K, double r, double sigma, double q, uint16_t n) {
-  double deltaT = T / n;
-  double up = exp(sigma * sqrt(deltaT));
-  double p0 = (up*exp(-q * deltaT) - exp(-r * deltaT)) / (pow(up, 2) - 1);
-  double p1 = exp(-r * deltaT) - p0;
+double americanPut(uint16_t T, double S, double K, double risk_free_rate, double voltility, double dividend_yield) {
+  double deltaT = 1;
+  uint16_t n = T;
+  double up = exp(voltility * sqrt(deltaT));
+  double p0 = (up*exp(-dividend_yield * deltaT) - exp(-risk_free_rate * deltaT)) / (pow(up, 2) - 1);
+  double p1 = exp(-risk_free_rate * deltaT) - p0;
 
   // initial values at time T
   std::vector<double> p;
@@ -48,16 +48,16 @@ double americanPut(uint16_t T, double S, double K, double r, double sigma, doubl
  * T -- expiration time
  * S -- stock price
  * K -- strike price
- * q -- dividend yield
  * n -- height of the binomial tree
  * 
  * Source: https://en.wikipedia.org/wiki/Binomial_options_pricing_model
  */
-double americanCall(uint16_t T, double S, double K, double r, double sigma, double q, uint16_t n) {
-  double deltaT = T / n;
-  double up = exp(sigma * sqrt(deltaT));
-  double p0 = (up*exp(-q * deltaT) - exp(-r * deltaT)) / (pow(up, 2) - 1);
-  double p1 = exp(-r * deltaT) - p0;
+double americanCall(uint16_t T, double S, double K, double risk_free_rate, double voltility, double dividend_yield) {
+  double deltaT = 1;
+  uint16_t n = T;
+  double up = exp(voltility * sqrt(deltaT));
+  double p0 = (up*exp(-dividend_yield * deltaT) - exp(-risk_free_rate * deltaT)) / (pow(up, 2) - 1);
+  double p1 = exp(-risk_free_rate * deltaT) - p0;
 
   // initial values at time T
   std::vector<double> p;

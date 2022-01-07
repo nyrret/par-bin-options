@@ -1,4 +1,4 @@
 #include <cstdint>
 
-double americanPut(uint16_t T, double S, double K, double r, double sigma, double q, uint16_t n);
-double americanCall(uint16_t T, double S, double K, double r, double sigma, double q, uint16_t n);
+double americanPut(uint16_t T, double S, double K, double risk_free_rate, double voltility, double dividend_yield);
+double americanCall(uint16_t T, double S, double K, double risk_free_rate, double voltility, double dividend_yield);
