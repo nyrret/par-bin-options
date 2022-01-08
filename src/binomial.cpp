@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <iostream>
 #include <math.h>
 #include <vector>
 
@@ -11,8 +12,8 @@
  * 
  * Adapted from https://en.wikipedia.org/wiki/Binomial_options_pricing_model
  */
-double europeanCall(uint16_t steps, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
-  double deltaT = 1;
+double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
+  double deltaT = (double)expirationTime/steps;
   double up = exp(voltility * sqrt(deltaT));
   double down = 1/up;
 
