@@ -5,49 +5,45 @@
 
 #include "binomial.h"
 
-// /*
-//  * T -- expiration time
-//  * S -- stock price
-//  * K -- strike price
-//  * 
-//  * Adapted from https://en.wikipedia.org/wiki/Binomial_options_pricing_model
-//  */
-// double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
-//   double deltaT = (double)expirationTime/steps;
-//   double up = exp(voltility * sqrt(deltaT));
-//   std::cout << "up: " << up << std::endl;
-//   double down = 1/up;
-// 
-//   // wiki
-//   // double pu = (exp((riskFreeRate-dividend_yield)*deltaT) - down)/(up-down);
-//   // double pd = 1-pu;
-// 
-//   // zubair
-//   double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
-//   double pd = 1-pu;
-// 
-//   // initial values at expiration time
-//   std::vector<double> p;
-//   for (int i = 0; i < steps; ++i) {
-//     std::cout << "up: " << up << " 2*i: " << 2*i << " steps: " << steps << std::endl;
-//     std::cout << pow(up, 2*i - steps) << std::endl;
-//      p.push_back(S * pow(up, 2*i - steps) - K);
-//     // p.push_back(S * pow(up, Nu - Nd) - K);
-//     if (p[i] < 0) {
-//         p[i] = 0;
-//     }
-//     std::cout << "p[" << i << "] = " << p[i] << std::endl;
-//   }
-// 
-//   // move to earlier times
-//   for (int j = steps-1; j >= 0; --j) {
-//     for (int i = 0; i < j; ++i) {
-//       // binomial value
-//       p[i] = (pu * p[i+1] + pd * p[i]); //* exp(-riskFreeRate*deltaT);
-//     }
-//   }
-//   return p[0];
-// }
+/*
+ * T -- expiration time
+ * S -- stock price
+ * K -- strike price
+ * 
+ * Partially adapted from Zubair
+ */
+double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
+  double deltaT = (double)expirationTime/steps;
+  double up = exp(voltility * sqrt(deltaT));
+  std::cout << "up: " << up << std::endl;
+  double down = 1/up;
+
+  // zubair
+  double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
+  double pd = 1-pu;
+
+  // initial values at expiration time
+  std::vector<double> p;
+  for (int i = 0; i < steps; ++i) {
+    std::cout << "up: " << up << " 2*i: " << 2*i << " steps: " << steps << std::endl;
+    std::cout << pow(up, 2*i - steps) << std::endl;
+     p.push_back(S * pow(up, 2*i - steps) - K);
+    // p.push_back(S * pow(up, Nu - Nd) - K);
+    if (p[i] < 0) {
+        p[i] = 0;
+    }
+    std::cout << "p[" << i << "] = " << p[i] << std::endl;
+  }
+
+  // move to earlier times
+  for (int j = steps-1; j >= 0; --j) {
+    for (int i = 0; i < j; ++i) {
+      // binomial value
+      p[i] = (pu * p[i+1] + pd * p[i]); //* exp(-riskFreeRate*deltaT);
+    }
+  }
+  return p[0];
+}
 
 
 // /*

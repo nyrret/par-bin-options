@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
   // european call from python european-call-option
   // want it to be approx 6.75
   // TODO: steps should be 98
-  // double result = europeanCall(4, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  double result = europeanCall(4, 252, 127.62, 130, 0.001, 0.20, 0.0163);
 
   // std::cout << "result: " << result << std::endl;
 }
