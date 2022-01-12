@@ -13,18 +13,21 @@
  * Partially adapted from Zubair
  */
 double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
-  double deltaT = (double)expirationTime/steps;
+  double deltaT = (double)expirationTime/steps/365;
+  double dx = voltility * sqrt(deltaT);
   double up = exp(voltility * sqrt(deltaT));
   std::cout << "up: " << up << std::endl;
   double down = 1/up;
 
   // zubair
-  double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
+  // double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
+  double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * voltility * voltility) * deltaT;
+  double pu = 0.5 + 0.5 * drift_per_step / dx;
   double pd = 1-pu;
 
   // initial values at expiration time
   std::vector<double> p;
-  for (int i = 0; i < steps; ++i) {
+  for (int i = 0; i < steps+1; ++i) {
     std::cout << "up: " << up << " 2*i: " << 2*i << " steps: " << steps << std::endl;
     std::cout << pow(up, 2*i - steps) << std::endl;
      p.push_back(S * pow(up, 2*i - steps) - K);
@@ -36,10 +39,10 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   }
 
   // move to earlier times
-  for (int j = steps-1; j >= 0; --j) {
+  for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
-      p[i] = (pu * p[i+1] + pd * p[i]); //* exp(-riskFreeRate*deltaT);
+      p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);; //
     }
   }
   return p[0];
