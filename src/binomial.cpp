@@ -12,7 +12,7 @@
  * 
  * Partially adapted from Zubair
  */
-double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
+double europeanCall(uint16_t steps, double expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
   double deltaT = (double)expirationTime/steps;
   double up = exp(voltility * sqrt(deltaT));
   std::cout << "up: " << up << std::endl;
@@ -148,4 +148,25 @@ double zubairBinomial(double S, double K, uint16_t steps, double riskFreeRate, d
     }
   }
   return optionArray[0];
+}
+
+double thurmanEuropeanCall(double S, double K, double expirationTime, double riskFreeRate, double volatility, uint16_t N) {
+  double dt = (1.0*expirationTime)/N;
+
+  double u = exp(volatility*sqrt(dt));
+  double d = 1.0/u;
+  double p = (exp(riskFreeRate*dt) - d)/(u-d);
+
+  std::vector<double> C;
+  for (int i = 0; i < N+1; ++i) {
+    C.push_back(std::max(S*pow(u, 2*i - N) - K, 0.0));
+  }
+
+  for (int i = N-1; i >= 0; --i) {
+    for (int j = 0; j < i+1; ++j) {
+      C[j] = exp(-riskFreeRate*dt)*(p*C[j+1] + (1-p)*C[j]);
+    }
+  }
+
+  return C[0];
 }

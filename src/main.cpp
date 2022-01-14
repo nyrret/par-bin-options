@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 
@@ -18,8 +19,17 @@ int main(int argc, char* argv[]) {
 
   // european call from python european-call-option
   // want it to be approx 6.75
-  // TODO: steps should be 98
-  double result = europeanCall(4, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  // TODO: steps should be 100
+  double result = europeanCall(200, 0.7, 127.62, 130, 0.001, 0.20, 0.0163);
 
-  // std::cout << "result: " << result << std::endl;
+  std::cout << "result: " << result << std::endl;
+
+  // thurman european call option
+  double thurman = thurmanEuropeanCall(100.0, 120.0, 1, 0.01, 0.2, 100);
+  std::cout << "thurman: " << thurman << std::endl;
+
+  // result from calculator
+  // TODO: go up
+  double thurmanCalc = thurmanEuropeanCall(127.62, 130.0, 0.7, 0.001, 0.2, 100);
+  std::cout << "thurmanCalc: " << thurmanCalc << std::endl;
 }
