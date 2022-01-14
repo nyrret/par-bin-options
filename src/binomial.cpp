@@ -6,36 +6,30 @@
 #include "binomial.h"
 
 /*
- * T -- expiration time
+ * T -- expiration time in days
  * S -- stock price
  * K -- strike price
- * 
- * Partially adapted from Zubair
  */
-double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
+double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
   double deltaT = (double)expirationTime/steps/365;
-  double dx = voltility * sqrt(deltaT);
-  double up = exp(voltility * sqrt(deltaT));
-  std::cout << "up: " << up << std::endl;
+  double dx = volatility * sqrt(deltaT);
+  double up = exp(volatility * sqrt(deltaT));
   double down = 1/up;
 
   // zubair
   // double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
-  double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * voltility * voltility) * deltaT;
+  double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
   double pu = 0.5 + 0.5 * drift_per_step / dx;
   double pd = 1-pu;
 
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-    std::cout << "up: " << up << " 2*i: " << 2*i << " steps: " << steps << std::endl;
-    std::cout << pow(up, 2*i - steps) << std::endl;
      p.push_back(S * pow(up, 2*i - steps) - K);
     // p.push_back(S * pow(up, Nu - Nd) - K);
     if (p[i] < 0) {
         p[i] = 0;
     }
-    std::cout << "p[" << i << "] = " << p[i] << std::endl;
   }
 
   // move to earlier times
@@ -48,91 +42,11 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   return p[0];
 }
 
-
-// /*
-//  * T -- expiration time
-//  * S -- stock price
-//  * K -- strike price
-//  * n -- height of the binomial tree
-//  * 
-//  * Source: https://en.wikipedia.org/wiki/Binomial_options_pricing_model
-//  */
-// double americanPut(uint16_t T, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
-//   double deltaT = 1;
-//   uint16_t n = T;
-//   double up = exp(voltility * sqrt(deltaT));
-//   double p0 = (up*exp(-dividend_yield * deltaT) - exp(-riskFreeRate * deltaT)) / (pow(up, 2) - 1);
-//   double p1 = exp(-riskFreeRate * deltaT) - p0;
-// 
-//   // initial values at time T
-//   std::vector<double> p;
-//   for (int i = 0; i < n; ++i) {
-//     p.push_back(K - S * pow(up, 2*i - n));
-//     if (p[i] < 0) {
-//         p[i] = 0;
-//     }
-//   }
-// 
-//   // move to earlier times
-//   for (int j = n-1; j >= 0; --j) {
-//     for (int i = 0; i < j; ++i) {
-//       // binomial value
-//       p[i] = p0 * p[i+1] + p1 * p[i];
-// 
-//       // exercise value
-//       double exercise = K - S * pow(up, 2*i - j);
-//       if (p[i] < exercise) {
-//           p[i] = exercise;
-//       }
-//     }
-//   }
-//   return p[0];
-// }
-// 
-// /*
-//  * T -- expiration time
-//  * S -- stock price
-//  * K -- strike price
-//  * n -- height of the binomial tree
-//  * 
-//  * Source: https://en.wikipedia.org/wiki/Binomial_options_pricing_model
-//  */
-// double americanCall(uint16_t T, double S, double K, double riskFreeRate, double voltility, double dividend_yield) {
-//   double deltaT = 1;
-//   uint16_t n = T;
-//   double up = exp(voltility * sqrt(deltaT));
-//   double p0 = (up*exp(-dividend_yield * deltaT) - exp(-riskFreeRate * deltaT)) / (pow(up, 2) - 1);
-//   double p1 = exp(-riskFreeRate * deltaT) - p0;
-// 
-//   // initial values at time T
-//   std::vector<double> p;
-//   for (int i = 0; i < n; ++i) {
-//     p.push_back(K - S * pow(up, 2*i - n));
-//     if (p[i] < 0) {
-//         p[i] = 0;
-//     }
-//   }
-// 
-//   // move to earlier times
-//   for (int j = n-1; j >= 0; --j) {
-//     for (int i = 0; i < j; ++i) {
-//       // binomial value
-//       p[i] = p0 * p[i+1] + p1 * p[i];
-// 
-//       // exercise value
-//       double exercise = S * pow(up, 2*i - j) - K;
-//       if (p[i] < exercise) {
-//           p[i] = exercise;
-//       }
-//     }
-//   }
-//   return p[0];
-// }
-// 
 // // Zubair paper  -- for European Call options, I believe
-double zubairBinomial(double S, double K, uint16_t steps, double riskFreeRate, double voltility, double dt) {
-  double u = exp(sqrt(dt)*voltility);
-  double d = exp(sqrt(dt)*(-voltility));
+double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility) {
+  double dt = (double)expirationTime/steps/365;
+  double u = exp(sqrt(dt)*volatility);
+  double d = exp(sqrt(dt)*(-volatility));
   double pu = (exp(riskFreeRate*dt)-d)/(u-d);
 
   std::vector<double> optionArray;
@@ -153,8 +67,11 @@ double zubairBinomial(double S, double K, uint16_t steps, double riskFreeRate, d
   return optionArray[0];
 }
 
-double thurmanEuropeanCall(double S, double K, double expirationTime, double riskFreeRate, double volatility, uint16_t N) {
-  double dt = (1.0*expirationTime)/N;
+/*
+ * expirationTime -- in days
+ */ 
+double thurmanEuropeanCall(double S, double K, uint16_t expirationTime, double riskFreeRate, double volatility, uint16_t N) {
+  double dt = (double)expirationTime/N/365;
 
   double u = exp(volatility*sqrt(dt));
   double d = 1.0/u;
