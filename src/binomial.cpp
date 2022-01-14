@@ -16,8 +16,6 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   double up = exp(volatility * sqrt(deltaT));
   double down = 1/up;
 
-  // zubair
-  // double pu = (exp(riskFreeRate*deltaT)-down)/(up-down);
   double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
   double pu = 0.5 + 0.5 * drift_per_step / dx;
   double pd = 1-pu;
@@ -26,7 +24,6 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
      p.push_back(S * pow(up, 2*i - steps) - K);
-    // p.push_back(S * pow(up, Nu - Nd) - K);
     if (p[i] < 0) {
         p[i] = 0;
     }
@@ -50,7 +47,7 @@ double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double 
   double pu = (exp(riskFreeRate*dt)-d)/(u-d);
 
   std::vector<double> optionArray;
-  for (int i = 0; i < steps; ++i) {
+  for (int i = 0; i < steps+1; ++i) {
     double assetPrice = S * pow(d, steps-i) * pow(u, i-1);
     optionArray.push_back(std::max(assetPrice - K, 0.0));
   }
@@ -59,7 +56,7 @@ double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double 
   double pds = exp(-riskFreeRate*dt)*(1-pu);
 
   // iteratively compute option price starting from leaf nodes
-  for (int i = steps-1; i >= 0; --i) { // TODO: this loop in paper is weird
+  for (int i = steps; i >= 0; --i) { // TODO: this loop in paper is weird
     for (int j = 0; j < i; ++j) {
       optionArray[j] = pus * optionArray[j+1] + pds * optionArray[j];
     }
