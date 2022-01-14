@@ -33,7 +33,7 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
-      p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);; //
+      p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);
     }
   }
   return p[0];
@@ -42,22 +42,26 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
 // // Zubair paper  -- for European Call options, I believe
 double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility) {
   double dt = (double)expirationTime/steps/365;
+
   double u = exp(sqrt(dt)*volatility);
   double d = exp(sqrt(dt)*(-volatility));
   double pu = (exp(riskFreeRate*dt)-d)/(u-d);
 
   std::vector<double> optionArray;
   for (int i = 0; i < steps+1; ++i) {
-    double assetPrice = S * pow(d, steps-i) * pow(u, i-1);
+    double assetPrice = S * pow(d, steps-i-1) * pow(u, i);
     optionArray.push_back(std::max(assetPrice - K, 0.0));
+    if (optionArray[i] < 0) {
+      optionArray[i] = 0;
+    }
   }
 
   double pus = exp(-riskFreeRate*dt)*pu;
   double pds = exp(-riskFreeRate*dt)*(1-pu);
 
   // iteratively compute option price starting from leaf nodes
-  for (int i = steps; i >= 0; --i) { // TODO: this loop in paper is weird
-    for (int j = 0; j < i; ++j) {
+  for (int i = steps; i >= 0; --i) { 
+    for (int j = 0; j < i-1; ++j) {
       optionArray[j] = pus * optionArray[j+1] + pds * optionArray[j];
     }
   }
