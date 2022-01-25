@@ -5,6 +5,7 @@
 
 #include "binomial.h"
 
+namespace Binomial {
 /*
  * T -- expiration time in days
  * S -- stock price
@@ -39,7 +40,37 @@ double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K,
   return p[0];
 }
 
-// // Zubair paper  -- for European Call options, I believe
+double americanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
+  double deltaT = (double)expirationTime/steps/365;
+  double dx = volatility * sqrt(deltaT);
+  double up = exp(volatility * sqrt(deltaT));
+  double down = 1/up;
+
+  double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
+  double pu = 0.5 + 0.5 * drift_per_step / dx;
+  double pd = 1-pu;
+
+  // initial values at expiration time
+  std::vector<double> p;
+  for (int i = 0; i < steps+1; ++i) {
+     p.push_back(S * pow(up, 2*i - steps) - K);
+    if (p[i] < 0) {
+        p[i] = 0;
+    }
+  }
+
+  // move to earlier times
+  for (int j = steps; j >= 0; --j) {
+    for (int i = 0; i < j; ++i) {
+      // binomial value
+      double exercise = S * pow(up, 2*i - (j-1)) - K;
+      p[i] = std::max(exercise, (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT));
+    }
+  }
+  return p[0];
+}
+
+// Zubair paper  -- for European Call options, I believe
 double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility) {
   double dt = (double)expirationTime/steps/365;
 
@@ -91,3 +122,4 @@ double thurmanEuropeanCall(double S, double K, uint16_t expirationTime, double r
 
   return C[0];
 }
+}  // namespace Binomial
