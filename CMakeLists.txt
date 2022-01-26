@@ -19,7 +19,6 @@ configure_file(src/main.h.in src/main.h)
 
 # add the executables
 add_executable(ParallelQuantLib src/main.cpp)
-# add_executable(Binomial src/binomial.cpp)
 add_executable(Test src/test/test.cpp)
 
 # link libraries
