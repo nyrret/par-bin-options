@@ -20,14 +20,16 @@ int main(int argc, char* argv[]) {
   // // american call from python american-call-option
   // // should be approx 6.8421
   // double americanResult = Binomial::americanCall(200, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  // std::cout << "americanCall result: " << americanResult << std::endl;
+  double americanResult = Binomial::binomialTraversal<Binomial::AmericanCallWithDividend>(
+    200, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  std::cout << "americanCall result: " << americanResult << std::endl;
 
   // // Thurman tutorial: http://www.josephthurman.com/binomial3.html
   // // should be approx 7.4510 (no dividend yield)
   // double thurmanCalc = Binomial::thurmanEuropeanCall(127.62, 130.0, 252, 0.001, 0.2, 100);
   // std::cout << "thurmanCalc result: " << thurmanCalc << std::endl;
 
-  // general framework test
+  // general framework test -- european call option
   // should be approx 6.7695
   double result = Binomial::binomialTraversal<Binomial::EuropeanCallWithDividend>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   std::cout << "general result: " << result << std::endl;
