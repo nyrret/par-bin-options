@@ -77,6 +77,9 @@ class AmericanCallWithDividend: public CallWithDividendConfig {
 
 template <class Config>
 double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
+
   double deltaT = (double)expirationTime/steps/365;
 
   // probabilities of up and down
