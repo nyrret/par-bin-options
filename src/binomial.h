@@ -4,7 +4,48 @@
 #include <vector>
 
 namespace Binomial {
-class EuropeanCallWithDividend {
+class OptionConfig {
+  public:
+    virtual double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) = 0;
+    virtual double getExerciseValue(int currentStep, int numUpMovements) = 0;
+};
+
+class CallWithDividendConfig : OptionConfig {
+  public:
+    explicit CallWithDividendConfig(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double dividendYield,
+      double volatility
+    ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
+      double dx = volatility * sqrt(deltaT);
+      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
+      pu_ = 0.5 + 0.5 * drift_per_step / dx;
+      pd_ = 1-pu_;
+
+      up_ = exp(volatility * sqrt(deltaT));
+    }
+
+    double getExerciseValue(int currentStep, int numUpMovements);
+
+  protected:
+    double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovemtns);
+
+  private:
+    uint16_t steps_;
+    double deltaT_;
+    double S_;  // initial price
+    double K_;  // strike price
+    double riskFreeRate_;
+    double pu_;
+    double pd_;
+    double up_;
+};
+
+class EuropeanCallWithDividend: public CallWithDividendConfig {
   public: 
     explicit EuropeanCallWithDividend(
       uint16_t steps,
@@ -14,32 +55,12 @@ class EuropeanCallWithDividend {
       double riskFreeRate,
       double dividendYield,
       double volatility
-    ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-      double dx = volatility * sqrt(deltaT);
-      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-      pu_ = 0.5 + 0.5 * drift_per_step / dx;
-      pd_ = 1-pu_;
+    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, dividendYield, volatility) {}
 
-      up_ = exp(volatility * sqrt(deltaT));
-      down_ = 1/up_;
-    }
-
-    double getBinomialValue(double currentValue, double futureValue, int i, int currentStep);
-    double getExerciseValue(int i, int currentStep);
-
-  private:
-    uint16_t steps_;
-    double deltaT_;
-    double S_;
-    double K_;
-    double riskFreeRate_;
-    double pu_;
-    double pd_;
-    double up_;
-    double down_;
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
-class AmericanCallWithDividend {
+class AmericanCallWithDividend: public CallWithDividendConfig {
   public: 
     explicit AmericanCallWithDividend(
       uint16_t steps,
@@ -49,37 +70,17 @@ class AmericanCallWithDividend {
       double riskFreeRate,
       double dividendYield,
       double volatility
-    ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-      double dx = volatility * sqrt(deltaT);
-      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-      pu_ = 0.5 + 0.5 * drift_per_step / dx;
-      pd_ = 1-pu_;
+    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, dividendYield, volatility) {}
 
-      up_ = exp(volatility * sqrt(deltaT));
-      down_ = 1/up_;
-    }
-
-    double getBinomialValue(double currentValue, double futureValue, int i, int currentStep);
-    double getExerciseValue(int i, int currentStep);
-
-  private:
-    uint16_t steps_;
-    double deltaT_;
-    double S_;
-    double K_;
-    double riskFreeRate_;
-    double pu_;
-    double pd_;
-    double up_;
-    double down_;
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
-template <class OptionConfig>
+template <class Config>
 double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
   double deltaT = (double)expirationTime/steps/365;
 
   // probabilities of up and down
-  OptionConfig config = OptionConfig{steps, deltaT, S, K, riskFreeRate, dividendYield, volatility};
+  Config config = Config{steps, deltaT, S, K, riskFreeRate, dividendYield, volatility};
 
   // initial values at expiration time
   std::vector<double> p;
@@ -94,7 +95,7 @@ double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, doub
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
-      p[i] = config.getBinomialValue(p[i], p[i+1], i, j);
+      p[i] = config.getNodeValue(p[i], p[i+1], i, j);
     }
   }
 
