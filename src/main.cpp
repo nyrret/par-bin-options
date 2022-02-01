@@ -22,15 +22,19 @@ int main(int argc, char* argv[]) {
   // double americanResult = Binomial::americanCall(200, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   double americanResult = Binomial::binomialTraversal<Binomial::AmericanCallWithDividend>(
     200, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  std::cout << "americanCall result: " << americanResult << std::endl;
-
-  // // Thurman tutorial: http://www.josephthurman.com/binomial3.html
-  // // should be approx 7.4510 (no dividend yield)
-  // double thurmanCalc = Binomial::thurmanEuropeanCall(127.62, 130.0, 252, 0.001, 0.2, 100);
-  // std::cout << "thurmanCalc result: " << thurmanCalc << std::endl;
+  std::cout << "american call result: " << americanResult << std::endl;
 
   // general framework test -- european call option
   // should be approx 6.7695
   double result = Binomial::binomialTraversal<Binomial::EuropeanCallWithDividend>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  std::cout << "general result: " << result << std::endl;
+  std::cout << "european call result: " << result << std::endl;
+
+  // Thurman tutorial: http://www.josephthurman.com/binomial3.html
+  // should be approx 7.4510 (no dividend yield)
+  double europeanCallNoDividend = Binomial::binomialTraversal<Binomial::EuropeanCallNoDividend>(100, 252, 127.62, 130, 0.001, 0.20);
+  std::cout << "european call no dividend result: " << europeanCallNoDividend << std::endl;
+
+  // should be approx 7.4510
+  double americanCallNoDividend = Binomial::binomialTraversal<Binomial::AmericanCallNoDividend>(100, 252, 127.62, 130, 0.001, 0.20);
+  std::cout << "american call no dividend result: " << americanCallNoDividend << std::endl;
 }

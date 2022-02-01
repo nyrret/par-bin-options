@@ -3,38 +3,25 @@
 #include <math.h>
 #include <vector>
 
+#include <boost/optional.hpp>
+
 namespace Binomial {
 class OptionConfig {
   public:
-    virtual double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) = 0;
-    virtual double getExerciseValue(int currentStep, int numUpMovements) = 0;
-};
-
-class CallWithDividendConfig : OptionConfig {
-  public:
-    explicit CallWithDividendConfig(
+    explicit OptionConfig(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
-      double riskFreeRate,
-      double dividendYield,
-      double volatility
-    ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-      double dx = volatility * sqrt(deltaT);
-      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-      pu_ = 0.5 + 0.5 * drift_per_step / dx;
-      pd_ = 1-pu_;
+      double riskFreeRate)
+    : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {}
 
-      up_ = exp(volatility * sqrt(deltaT));
-    }
+    virtual double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) = 0;
 
     double getExerciseValue(int currentStep, int numUpMovements);
+    double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
   protected:
-    double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovemtns);
-
-  private:
     uint16_t steps_;
     double deltaT_;
     double S_;  // initial price
@@ -45,6 +32,26 @@ class CallWithDividendConfig : OptionConfig {
     double up_;
 };
 
+class CallWithDividendConfig : public OptionConfig {
+  public:
+    explicit CallWithDividendConfig(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
+      double dx = volatility * sqrt(deltaT);
+      double drift_per_step = (riskFreeRate - dividendYield.value() - 0.5 * volatility * volatility) * deltaT;
+      pu_ = 0.5 + 0.5 * drift_per_step / dx;
+      pd_ = 1-pu_;
+
+      up_ = exp(volatility * sqrt(deltaT));
+    }
+};
+
 class EuropeanCallWithDividend: public CallWithDividendConfig {
   public: 
     explicit EuropeanCallWithDividend(
@@ -53,9 +60,9 @@ class EuropeanCallWithDividend: public CallWithDividendConfig {
       double S,
       double K,
       double riskFreeRate,
-      double dividendYield,
-      double volatility
-    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, dividendYield, volatility) {}
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
@@ -68,22 +75,70 @@ class AmericanCallWithDividend: public CallWithDividendConfig {
       double S,
       double K,
       double riskFreeRate,
-      double dividendYield,
-      double volatility
-    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, dividendYield, volatility) {}
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+class CallNoDividendConfig : public OptionConfig {
+  public: 
+    explicit CallNoDividendConfig(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
+      up_ = exp(volatility * sqrt(deltaT));
+      double down = 1.0/up_;
+
+      pu_ = (exp(riskFreeRate*deltaT) - down)/(up_-down);
+      pd_ = 1-pu_;
+    }
+};
+
+class EuropeanCallNoDividend: public CallNoDividendConfig {
+  public: 
+    explicit EuropeanCallNoDividend(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : CallNoDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+class AmericanCallNoDividend: public CallNoDividendConfig {
+  public: 
+    explicit AmericanCallNoDividend(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      boost::optional<double> dividendYield
+    ) : CallNoDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
 template <class Config>
-double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
+double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, boost::optional<double> dividendYield = boost::none) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
   double deltaT = (double)expirationTime/steps/365;
 
-  // probabilities of up and down
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, dividendYield, volatility};
+  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // initial values at expiration time
   std::vector<double> p;
