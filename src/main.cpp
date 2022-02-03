@@ -37,4 +37,9 @@ int main(int argc, char* argv[]) {
   // should be approx 7.4510
   double americanCallNoDividend = Binomial::binomialTraversal<Binomial::AmericanCallNoDividend>(100, 252, 127.62, 130, 0.001, 0.20);
   std::cout << "american call no dividend result: " << americanCallNoDividend << std::endl;
+
+  // parallel
+  // should be approx 7.4510
+  double parEuropeanCallNoDividend = Binomial::parallelBinomialTraversal<Binomial::EuropeanCallNoDividend>(100, 252, 127.62, 130, 0.001, 0.20);
+  std::cout << "parallel european call no dividend result: " << parEuropeanCallNoDividend << std::endl;
 }

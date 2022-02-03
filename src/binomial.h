@@ -5,6 +5,9 @@
 
 #include <boost/optional.hpp>
 
+#include <parlay/parallel.h>
+#include <parlay/sequence.h>
+
 namespace Binomial {
 class OptionConfig {
   public:
@@ -16,7 +19,7 @@ class OptionConfig {
       double riskFreeRate)
     : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {}
 
-    virtual double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) = 0;
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
     double getExerciseValue(int currentStep, int numUpMovements);
     double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
@@ -150,11 +153,49 @@ double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, doub
   }
 
   // move to earlier times 
+  // for (int j = steps; j >= 0; --j) {
+  //   for (int i = 0; i < j; ++i) {
+  //     // binomial value
+  //     p[i] = config.getNodeValue(p[i], p[i+1], i, j);
+  //   }
+  // }
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
       p[i] = config.getNodeValue(p[i], p[i+1], i, j);
     }
+  }
+
+  return p[0];
+}
+
+template <class Config>
+double parallelBinomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, boost::optional<double> dividendYield = boost::none) {
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
+
+  double deltaT = (double)expirationTime/steps/365;
+
+  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
+
+  // initial values at expiration time
+  std::vector<double> p;
+  for (int i = 0; i < steps+1; ++i) {
+    p.push_back(config.getExerciseValue(i, steps+1));
+    if (p[i] < 0) {
+      p[i] = 0;
+    }
+  }
+
+  // move to earlier times 
+  std::vector<double> pastValues(steps+1);
+  p.swap(pastValues);
+  for (int j = steps; j >= 0; --j) {
+    parlay::parallel_for(0, j, [&](int i) {
+      // binomial value
+      p[i] = config.getNodeValue(pastValues[i], pastValues[i+1], i, j);
+    });
+    p.swap(pastValues);
   }
 
   return p[0];
