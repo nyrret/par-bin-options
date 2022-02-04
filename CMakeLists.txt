@@ -29,6 +29,7 @@ add_executable(Test src/test/test.cpp)
 target_link_libraries(ParallelQuantLib PUBLIC Source)
 target_link_libraries(ParallelQuantLib PRIVATE Parlay::parlay)
 target_link_libraries(Test PRIVATE gtest_main) # link gtest to this executable
+target_link_libraries(Test PRIVATE Source) 
 
 # add the binary tree to the search path for include files
 target_include_directories(ParallelQuantLib PUBLIC

@@ -6,19 +6,8 @@
 #include "binomial.h"
 
 int main(int argc, char* argv[]) {
-  // european call from Zubair paper
-  // should be approx 7.4510 (no dividend yield)
-  // not correct right now
-  // double zubairResult = Binomial::zubairBinomial(100, 252, 127.62, 130.0, 0.001, 0.20);
-  // std::cout << "zubair result: " << zubairResult << std::endl;
-
-  // // european call from python european-call-option
-  // // should be approx 6.7695
-  // double europeanResult = Binomial::europeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  // std::cout << "europeanCall result: " << europeanResult << std::endl;
-
-  // // american call from python american-call-option
-  // // should be approx 6.8421, from QL, or 6.8586 from calc
+  // american call from python american-call-option
+  // should be approx 6.8421, from QL, or 6.8586 from calc
   double americanCallQL = Binomial::binomialTraversal<Binomial::QLAmericanCall>(
     200, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   std::cout << "american call QL: " << americanCallQL << std::endl;

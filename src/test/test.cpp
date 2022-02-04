@@ -1,17 +1,59 @@
 #include <gtest/gtest.h>
 #include "binomial.h"
 
-TEST(BinomialTest, europeanCallTest)
+// QuantLib tests
+TEST(BinomialTest, europeanCallQLTest)
 {
-  // double result = Binomial::europeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  // EXPECT_LE(europeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163), 6.76954);
-  // EXPECT_GE(europeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163), 6.76950);
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 6.7695
+  EXPECT_GE(result, 6.76945);
+  EXPECT_LT(result, 6.76955);
 }
 
-TEST(BinomialTest, zubairBinomialTest)
+TEST(BinomialTest, europeanCallQLNoDividendTest)
 {
-  EXPECT_LE(32, 6.76954);
-  EXPECT_GE(32, 6.76950);
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100, 252, 127.62, 130, 0.001, 0.20);
+
+  // should be approx 7.4510
+  EXPECT_GE(result, 7.4505);
+  EXPECT_LT(result, 7.4515);
+}
+
+TEST(BinomialTest, europeanPutQLTest)
+{
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanPut>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 10.4880
+  EXPECT_GE(result, 10.48795);
+  EXPECT_LT(result, 10.4881);
+}
+
+TEST(BinomialTest, americanCallQLTest)
+{
+  double result = Binomial::binomialTraversal<Binomial::QLAmericanCall>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 6.8586
+  EXPECT_GE(result, 6.85855);
+  EXPECT_LT(result, 6.85865);
+}
+
+TEST(BinomialTest, americanCallQLNoDividendTest)
+{
+  double result = Binomial::binomialTraversal<Binomial::QLAmericanCall>(100, 252, 127.62, 130, 0.001, 0.20);
+
+  // should be approx 7.4510
+  EXPECT_GE(result, 7.4505);
+  EXPECT_LT(result, 7.4515);
+}
+
+TEST(BinomialTest, americanPutQLTest)
+{
+  double result = Binomial::binomialTraversal<Binomial::QLAmericanPut>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 10.4881
+  EXPECT_GE(result, 10.48805);
+  EXPECT_LT(result, 10.48815);
 }
 
 int main(int argc, char* argv[])
