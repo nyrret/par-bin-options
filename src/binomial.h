@@ -3,8 +3,6 @@
 #include <math.h>
 #include <vector>
 
-#include <boost/optional.hpp>
-
 #include <parlay/parallel.h>
 #include <parlay/sequence.h>
 
@@ -19,10 +17,11 @@ class OptionConfig {
       double riskFreeRate)
     : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {}
 
+    double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
-    double getExerciseValue(int currentStep, int numUpMovements);
     double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    double getSpotPrice(int currentStep, int numUpMovements);
 
   protected:
     uint16_t steps_;
@@ -35,19 +34,21 @@ class OptionConfig {
     double up_;
 };
 
-class CallWithDividendConfig : public OptionConfig {
+// ==========QuantLib=======================
+
+class QuantLibConfig : public OptionConfig {
   public:
-    explicit CallWithDividendConfig(
+    explicit QuantLibConfig(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
+      double dividendYield
     ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
       double dx = volatility * sqrt(deltaT);
-      double drift_per_step = (riskFreeRate - dividendYield.value() - 0.5 * volatility * volatility) * deltaT;
+      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
       pu_ = 0.5 + 0.5 * drift_per_step / dx;
       pd_ = 1-pu_;
 
@@ -55,87 +56,157 @@ class CallWithDividendConfig : public OptionConfig {
     }
 };
 
-class EuropeanCallWithDividend: public CallWithDividendConfig {
+class QLEuropeanCall: public QuantLibConfig {
   public: 
-    explicit EuropeanCallWithDividend(
+    explicit QLEuropeanCall(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
-    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+      double dividendYield
+    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
+    double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
-class AmericanCallWithDividend: public CallWithDividendConfig {
+class QLEuropeanPut: public QuantLibConfig {
   public: 
-    explicit AmericanCallWithDividend(
+    explicit QLEuropeanPut(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
-    ) : CallWithDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+      double dividendYield
+    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
+    double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
-class CallNoDividendConfig : public OptionConfig {
+class QLAmericanCall: public QuantLibConfig {
   public: 
-    explicit CallNoDividendConfig(
+    explicit QLAmericanCall(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
+      double dividendYield
+    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getExerciseValue(int currentStep, int numUpMovements);
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+class QLAmericanPut: public QuantLibConfig {
+  public: 
+    explicit QLAmericanPut(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      double dividendYield
+    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getExerciseValue(int currentStep, int numUpMovements);
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+// ==============Zubair=======================
+
+class ZubairConfig : public OptionConfig {
+  public: 
+    explicit ZubairConfig(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      double dividendYield
     ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
       up_ = exp(volatility * sqrt(deltaT));
       double down = 1.0/up_;
 
-      pu_ = (exp(riskFreeRate*deltaT) - down)/(up_-down);
+      pu_ = (exp((riskFreeRate-dividendYield)*deltaT) - down)/(up_-down);
       pd_ = 1-pu_;
     }
 };
 
-class EuropeanCallNoDividend: public CallNoDividendConfig {
+class ZubairEuropeanCall: public ZubairConfig {
   public: 
-    explicit EuropeanCallNoDividend(
+    explicit ZubairEuropeanCall(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
-    ) : CallNoDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+      double dividendYield
+    ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
+    double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
-class AmericanCallNoDividend: public CallNoDividendConfig {
+class ZubairEuropeanPut: public ZubairConfig {
   public: 
-    explicit AmericanCallNoDividend(
+    explicit ZubairEuropeanPut(
       uint16_t steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate,
       double volatility,
-      boost::optional<double> dividendYield
-    ) : CallNoDividendConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+      double dividendYield
+    ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
+    double getExerciseValue(int currentStep, int numUpMovements);
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+class ZubairAmericanCall: public ZubairConfig {
+  public: 
+    explicit ZubairAmericanCall(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      double dividendYield
+    ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getExerciseValue(int currentStep, int numUpMovements);
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+};
+
+class ZubairAmericanPut: public ZubairConfig {
+  public: 
+    explicit ZubairAmericanPut(
+      uint16_t steps,
+      double deltaT,
+      double S,
+      double K,
+      double riskFreeRate,
+      double volatility,
+      double dividendYield
+    ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+
+    double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 };
 
 template <class Config>
-double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, boost::optional<double> dividendYield = boost::none) {
+double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
@@ -170,7 +241,7 @@ double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, doub
 }
 
 template <class Config>
-double parallelBinomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, boost::optional<double> dividendYield = boost::none) {
+double parallelBinomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
