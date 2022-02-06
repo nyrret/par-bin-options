@@ -1,22 +1,22 @@
 #include "binomial.h"
 
 namespace Binomial {
-double OptionConfig::getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-}
-
-double OptionConfig::getSpotPrice(int currentStep, int numUpMovements) {
-  return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
-}
+// double OptionConfig::getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+//   return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+// }
+// 
+// double OptionConfig::getSpotPrice(int currentStep, int numUpMovements) {
+//   return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
+// }
 
 // QL European 
-double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
-  return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-}
-
-double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-}
+// double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
+//   return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+// }
+// 
+// double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+//   return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+// }
 
 double QLEuropeanPut::getExerciseValue(int currentStep, int numUpMovements) {
   return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);

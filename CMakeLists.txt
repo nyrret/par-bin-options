@@ -24,12 +24,18 @@ find_package(Parlay CONFIG REQUIRED)
 # add the executables
 add_executable(ParallelQuantLib src/main.cpp)
 add_executable(Test src/test/test.cpp)
+add_executable(PerfTest src/perf-test.cpp)
 
 # link libraries
 target_link_libraries(ParallelQuantLib PUBLIC Source)
 target_link_libraries(ParallelQuantLib PRIVATE Parlay::parlay)
+
 target_link_libraries(Test PRIVATE gtest_main) # link gtest to this executable
 target_link_libraries(Test PRIVATE Source) 
+
+target_link_libraries(PerfTest PRIVATE gtest_main) # link gtest to this executable
+target_link_libraries(PerfTest PRIVATE Source) 
+target_link_libraries(PerfTest PRIVATE OriginalBinomial) 
 
 # add the binary tree to the search path for include files
 target_include_directories(ParallelQuantLib PUBLIC

@@ -10,7 +10,7 @@ namespace Binomial {
 class OptionConfig {
   public:
     explicit OptionConfig(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -20,11 +20,15 @@ class OptionConfig {
     double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
-    double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
-    double getSpotPrice(int currentStep, int numUpMovements);
+    inline double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+      return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+    }
+    inline double getSpotPrice(int currentStep, int numUpMovements) {
+      return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
+    }
 
   protected:
-    uint16_t steps_;
+    uint32_t steps_;
     double deltaT_;
     double S_;  // initial price
     double K_;  // strike price
@@ -39,7 +43,7 @@ class OptionConfig {
 class QuantLibConfig : public OptionConfig {
   public:
     explicit QuantLibConfig(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -59,7 +63,7 @@ class QuantLibConfig : public OptionConfig {
 class QLEuropeanCall: public QuantLibConfig {
   public: 
     explicit QLEuropeanCall(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -68,14 +72,18 @@ class QLEuropeanCall: public QuantLibConfig {
       double dividendYield
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+      return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+    }
 };
 
 class QLEuropeanPut: public QuantLibConfig {
   public: 
     explicit QLEuropeanPut(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -91,7 +99,7 @@ class QLEuropeanPut: public QuantLibConfig {
 class QLAmericanCall: public QuantLibConfig {
   public: 
     explicit QLAmericanCall(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -107,7 +115,7 @@ class QLAmericanCall: public QuantLibConfig {
 class QLAmericanPut: public QuantLibConfig {
   public: 
     explicit QLAmericanPut(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -125,7 +133,7 @@ class QLAmericanPut: public QuantLibConfig {
 class ZubairConfig : public OptionConfig {
   public: 
     explicit ZubairConfig(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -144,7 +152,7 @@ class ZubairConfig : public OptionConfig {
 class ZubairEuropeanCall: public ZubairConfig {
   public: 
     explicit ZubairEuropeanCall(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -160,7 +168,7 @@ class ZubairEuropeanCall: public ZubairConfig {
 class ZubairEuropeanPut: public ZubairConfig {
   public: 
     explicit ZubairEuropeanPut(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -176,7 +184,7 @@ class ZubairEuropeanPut: public ZubairConfig {
 class ZubairAmericanCall: public ZubairConfig {
   public: 
     explicit ZubairAmericanCall(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -192,7 +200,7 @@ class ZubairAmericanCall: public ZubairConfig {
 class ZubairAmericanPut: public ZubairConfig {
   public: 
     explicit ZubairAmericanPut(
-      uint16_t steps,
+      uint32_t steps,
       double deltaT,
       double S,
       double K,
@@ -206,7 +214,7 @@ class ZubairAmericanPut: public ZubairConfig {
 };
 
 template <class Config>
-double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
@@ -223,13 +231,6 @@ double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, doub
     }
   }
 
-  // move to earlier times 
-  // for (int j = steps; j >= 0; --j) {
-  //   for (int i = 0; i < j; ++i) {
-  //     // binomial value
-  //     p[i] = config.getNodeValue(p[i], p[i+1], i, j);
-  //   }
-  // }
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
@@ -241,7 +242,7 @@ double binomialTraversal(uint16_t steps, uint16_t expirationTime, double S, doub
 }
 
 template <class Config>
-double parallelBinomialTraversal(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double parallelBinomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
@@ -271,122 +272,4 @@ double parallelBinomialTraversal(uint16_t steps, uint16_t expirationTime, double
 
   return p[0];
 }
-
-
-// /*
-//  * T -- expiration time in days
-//  * S -- stock price
-//  * K -- strike price
-//  */
-// double europeanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
-//   double deltaT = (double)expirationTime/steps/365;
-//   double dx = volatility * sqrt(deltaT);
-//   double up = exp(volatility * sqrt(deltaT));
-//   double down = 1/up;
-// 
-//   double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
-//   double pu = 0.5 + 0.5 * drift_per_step / dx;
-//   double pd = 1-pu;
-// 
-//   // initial values at expiration time
-//   std::vector<double> p;
-//   for (int i = 0; i < steps+1; ++i) {
-//      p.push_back(S * pow(up, 2*i - steps) - K);
-//     if (p[i] < 0) {
-//         p[i] = 0;
-//     }
-//   }
-// 
-//   // move to earlier times
-//   for (int j = steps; j >= 0; --j) {
-//     for (int i = 0; i < j; ++i) {
-//       // binomial value
-//       p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);
-//     }
-//   }
-//   return p[0];
-// }
-// 
-// double americanCall(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
-//   double deltaT = (double)expirationTime/steps/365;
-//   double dx = volatility * sqrt(deltaT);
-//   double up = exp(volatility * sqrt(deltaT));
-//   double down = 1/up;
-// 
-//   double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
-//   double pu = 0.5 + 0.5 * drift_per_step / dx;
-//   double pd = 1-pu;
-// 
-//   // initial values at expiration time
-//   std::vector<double> p;
-//   for (int i = 0; i < steps+1; ++i) {
-//      p.push_back(S * pow(up, 2*i - steps) - K);
-//     if (p[i] < 0) {
-//         p[i] = 0;
-//     }
-//   }
-// 
-//   // move to earlier times
-//   for (int j = steps; j >= 0; --j) {
-//     for (int i = 0; i < j; ++i) {
-//       // binomial value
-//       double exercise = S * pow(up, 2*i - (j-1)) - K;
-//       p[i] = std::max(exercise, (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT));
-//     }
-//   }
-//   return p[0];
-// }
-// 
-// // Zubair paper  -- for European Call options, I believe
-// double zubairBinomial(uint16_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility) {
-//   double dt = (double)expirationTime/steps/365;
-// 
-//   double u = exp(sqrt(dt)*volatility);
-//   double d = exp(sqrt(dt)*(-volatility));
-//   double pu = (exp(riskFreeRate*dt)-d)/(u-d);
-// 
-//   std::vector<double> optionArray;
-//   for (int i = 0; i < steps+1; ++i) {
-//     double assetPrice = S * pow(d, steps-i-1) * pow(u, i);
-//     optionArray.push_back(std::max(assetPrice - K, 0.0));
-//     if (optionArray[i] < 0) {
-//       optionArray[i] = 0;
-//     }
-//   }
-// 
-//   double pus = exp(-riskFreeRate*dt)*pu;
-//   double pds = exp(-riskFreeRate*dt)*(1-pu);
-// 
-//   // iteratively compute option price starting from leaf nodes
-//   for (int i = steps-1; i >= 0; --i) { 
-//     for (int j = 0; j < i+1; ++j) {
-//       optionArray[j] = pus * optionArray[j+1] + pds * optionArray[j];
-//     }
-//   }
-//   return optionArray[0];
-// }
-// 
-// /*
-//  * expirationTime -- in days
-//  */ 
-// double thurmanEuropeanCall(double S, double K, uint16_t expirationTime, double riskFreeRate, double volatility, uint16_t N) {
-//   double dt = (double)expirationTime/N/365;
-// 
-//   double u = exp(volatility*sqrt(dt));
-//   double d = 1.0/u;
-//   double p = (exp(riskFreeRate*dt) - d)/(u-d);
-// 
-//   std::vector<double> C;
-//   for (int i = 0; i < N+1; ++i) {
-//     C.push_back(std::max(S*pow(u, 2*i - N) - K, 0.0));
-//   }
-// 
-//   for (int i = N-1; i >= 0; --i) {
-//     for (int j = 0; j < i+1; ++j) {
-//       C[j] = exp(-riskFreeRate*dt)*(p*C[j+1] + (1-p)*C[j]);
-//     }
-//   }
-// 
-//   return C[0];
-// }
 }  // namespace Binomial
