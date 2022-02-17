@@ -3,8 +3,6 @@
 #include <math.h>
 #include <vector>
 
-#include "gettime.h"
-
 #include <parlay/parallel.h>
 #include <parlay/sequence.h>
 
@@ -29,7 +27,7 @@ class OptionConfig {
       return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
     }
 
-  public: // TODO
+  protected:
     uint32_t steps_;
     double deltaT_;
     double S_;  // initial price
@@ -39,28 +37,6 @@ class OptionConfig {
     double pd_;
     double up_;
 };
-
-static inline __attribute__((always_inline)) double getBinomialValueHelper(
-  double currentValue, 
-  double futureValue,
-  int currentStep, 
-  int numUpMovements,
-  double pu,
-  double pd,
-  double riskFreeRate,
-  double deltaT
-) {
-  return (pu * futureValue + pd * currentValue)*exp(-riskFreeRate*deltaT);
-}
-
-static inline __attribute__((always_inline)) double getSpotPriceHelper(
-  int currentStep, 
-  int numUpMovements,
-  double S,
-  double up
-) {
-  return S * pow(up, 2*currentStep - (numUpMovements - 1));
-}
 
 // ==========QuantLib=======================
 
@@ -96,7 +72,6 @@ class QLEuropeanCall { // TODO inherits
       double dividendYield
     // ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
     // TODO replace constructor body with above line
-    // ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
     ) {
       double dx = volatility * sqrt(deltaT);
       double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
@@ -104,43 +79,24 @@ class QLEuropeanCall { // TODO inherits
       pd_ = 1-pu_;
 
       up_ = exp(volatility * sqrt(deltaT));
-
-      steps_ = steps;
-      S_ = S;
-      K_ = K;
-      deltaT_ = deltaT;
-      riskFreeRate_ = riskFreeRate;
     }
 
-    inline __attribute__((always_inline)) double getExerciseValue(int currentStep, int numUpMovements) {
-      return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
-      // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    inline double getExerciseValue(int currentStep, int numUpMovements) {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
     }
-    inline __attribute__((always_inline)) double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-      // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-      return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+      return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
     }
 
     // TODO: everything below here is from OptionConfig
-    inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+    inline double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
       return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-      // return getBinomialValueHelper(
-      //   currentValue,
-      //   futureValue,
-      //   currentStep,
-      //   numUpMovements,
-      //   pu_,
-      //   pd_,
-      //   riskFreeRate_,
-      //   deltaT_
-      // );
     }
-    inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
+    inline double getSpotPrice(int currentStep, int numUpMovements) {
       return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
-      // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
     }
 
-  public: // TODO: protected
+  protected:
     uint32_t steps_;
     double deltaT_;
     double S_;  // initial price
@@ -289,7 +245,7 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
   // TODO: put this back in if use inheritance
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
-  //Timer t = Timer{};
+
   double deltaT = (double)expirationTime/steps/365;
 
   Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
@@ -297,12 +253,12 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-    p.push_back(config.getExerciseValue(i, steps+1)); if (p[i] < 0) {
+    p.push_back(config.getExerciseValue(i, steps+1));
+    if (p[i] < 0) {
       p[i] = 0;
     }
   }
 
-  // move to earlier times 
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
@@ -326,7 +282,8 @@ double parallelBinomialTraversal(uint32_t steps, uint16_t expirationTime, double
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-    p.push_back(config.getExerciseValue(i, steps+1)); if (p[i] < 0) {
+    p.push_back(config.getExerciseValue(i, steps+1));
+    if (p[i] < 0) {
       p[i] = 0;
     }
   }
@@ -340,36 +297,6 @@ double parallelBinomialTraversal(uint32_t steps, uint16_t expirationTime, double
       p[i] = config.getNodeValue(pastValues[i], pastValues[i+1], i, j);
     });
     p.swap(pastValues);
-  }
-
-  return p[0];
-}
-
-template <class Config>
-double stencilBinomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
-  // TODO: put this back in if use inheritance
-  // static_assert(std::is_base_of<OptionConfig, Config>::value,
-  //   "Config must be a derived class of OptionConfig");
-
-  double deltaT = (double)expirationTime/steps/365;
-
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
-
-  // initial values at expiration time
-  std::vector<double> p;
-  for (int i = 0; i < steps+1; ++i) {
-    p.push_back(config.getExerciseValue(i, steps+1));
-    if (p[i] < 0) {
-      p[i] = 0;
-    }
-  }
-
-  // stencil computation
-  for (int j = steps; j >= 0; --j) {
-    for (int i = 0; i < j; ++i) {
-      // binomial value
-      p[i] = config.getNodeValue(p[i], p[i+1], i, j);
-    }
   }
 
   return p[0];
