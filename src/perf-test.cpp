@@ -12,11 +12,11 @@ int main(int argc, char* argv[])
   // t.reportTotal("Zubair general framework");
 
   t.start();
-  Binomial::qlEuropeanCall(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Binomial::qlEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL European Call");
 
   // general vs. original implementation
-  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL general framework");
 
   // t.start();

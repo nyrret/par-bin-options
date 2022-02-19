@@ -84,7 +84,7 @@ class QuantLibConfig : public OptionConfig {
     }
 };
 
-class QLEuropeanCall { // TODO inherits
+class QLEuropeanCall: public QuantLibConfig { // TODO inherits
   public: 
     explicit QLEuropeanCall(
       uint32_t steps,
@@ -94,61 +94,56 @@ class QLEuropeanCall { // TODO inherits
       double riskFreeRate,
       double volatility,
       double dividendYield
-    // ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
     // TODO replace constructor body with above line
     // ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-    ) {
-      double dx = volatility * sqrt(deltaT);
-      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-      pu_ = 0.5 + 0.5 * drift_per_step / dx;
-      pd_ = 1-pu_;
+    //   double dx = volatility * sqrt(deltaT);
+    //   double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
+    //   pu_ = 0.5 + 0.5 * drift_per_step / dx;
+    //   pd_ = 1-pu_;
 
-      up_ = exp(volatility * sqrt(deltaT));
+    //   up_ = exp(volatility * sqrt(deltaT));
+    // }
 
-      steps_ = steps;
-      S_ = S;
-      K_ = K;
-      deltaT_ = deltaT;
-      riskFreeRate_ = riskFreeRate;
-    }
+    double getExerciseValue(int currentStep, int numUpMovements);
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+  //   inline __attribute__((always_inline)) double getExerciseValue(int currentStep, int numUpMovements) {
+  //     return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
+  //     // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+  //   }
+  //   inline __attribute__((always_inline)) double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+  //     // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+  //     return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+  //   }
 
-    inline __attribute__((always_inline)) double getExerciseValue(int currentStep, int numUpMovements) {
-      return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
-      // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-    }
-    inline __attribute__((always_inline)) double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-      // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-      return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-    }
+  //   // TODO: everything below here is from OptionConfig
+  //   inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+  //     return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+  //     // return getBinomialValueHelper(
+  //     //   currentValue,
+  //     //   futureValue,
+  //     //   currentStep,
+  //     //   numUpMovements,
+  //     //   pu_,
+  //     //   pd_,
+  //     //   riskFreeRate_,
+  //     //   deltaT_
+  //     // );
+  //   }
+  //   inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
+  //     return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
+  //     // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
+  //   }
 
-    // TODO: everything below here is from OptionConfig
-    inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-      return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-      // return getBinomialValueHelper(
-      //   currentValue,
-      //   futureValue,
-      //   currentStep,
-      //   numUpMovements,
-      //   pu_,
-      //   pd_,
-      //   riskFreeRate_,
-      //   deltaT_
-      // );
-    }
-    inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
-      return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
-      // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
-    }
-
-  public: // TODO: protected
-    uint32_t steps_;
-    double deltaT_;
-    double S_;  // initial price
-    double K_;  // strike price
-    double riskFreeRate_;
-    double pu_;
-    double pd_;
-    double up_;
+  // public: // TODO: protected
+  //   uint32_t steps_;
+  //   double deltaT_;
+  //   double S_;  // initial price
+  //   double K_;  // strike price
+  //   double riskFreeRate_;
+  //   double pu_;
+  //   double pd_;
+  //   double up_;
 };
 
 class QLEuropeanPut: public QuantLibConfig {
@@ -289,10 +284,13 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
   // TODO: put this back in if use inheritance
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
-  //Timer t = Timer{};
+
+  Timer t = Timer{};
+  t.start();
   double deltaT = (double)expirationTime/steps/365;
 
   Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
+  t.reportNext("Init Config");
 
   // initial values at expiration time
   std::vector<double> p;
@@ -301,6 +299,7 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
       p[i] = 0;
     }
   }
+  t.reportNext("Init values at expiration time");
 
   // move to earlier times 
   for (int j = steps; j >= 0; --j) {
@@ -309,6 +308,7 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
       p[i] = config.getNodeValue(p[i], p[i+1], i, j);
     }
   }
+  t.reportNext("Compute binomial values");
 
   return p[0];
 }

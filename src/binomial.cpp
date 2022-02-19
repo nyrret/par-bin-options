@@ -10,13 +10,13 @@ namespace Binomial {
 // }
 
 // QL European 
-// double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
-//   return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-// }
-// 
-// double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-//   return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-// }
+double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
+  return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+}
+
+double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+  return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+}
 
 double QLEuropeanPut::getExerciseValue(int currentStep, int numUpMovements) {
   return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);

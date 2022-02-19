@@ -2,6 +2,7 @@
 #include <math.h>
 #include <vector>
 
+#include "gettime.h"
 #include "original-binomial.h"
 
 namespace Binomial {
@@ -11,6 +12,8 @@ namespace Binomial {
  * K -- strike price
  */
 double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
+  Timer t = Timer();
+  t.start();
   double deltaT = (double)expirationTime/steps/365;
   double dx = volatility * sqrt(deltaT);
   double up = exp(volatility * sqrt(deltaT));
@@ -19,6 +22,7 @@ double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double 
   double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
   double pu = 0.5 + 0.5 * drift_per_step / dx;
   double pd = 1-pu;
+  t.reportNext("Init values");
 
   // initial values at expiration time
   std::vector<double> p;
@@ -28,6 +32,7 @@ double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double 
         p[i] = 0;
     }
   }
+  t.reportNext("Init values at expiration time");
 
   // move to earlier times
   for (int j = steps; j >= 0; --j) {
@@ -36,6 +41,8 @@ double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double 
       p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);
     }
   }
+  t.reportNext("Compute binomial values");
+
   return p[0];
 }
 
