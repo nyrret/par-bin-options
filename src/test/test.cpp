@@ -1,10 +1,15 @@
 #include <gtest/gtest.h>
 #include "binomial.h"
+#include "gettime.h"
 
 // ============= QuantLib tests ================
 TEST(BinomialTest, europeanCallQLTest)
 {
-  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Timer t = Timer{};
+  t.start();
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportTotal("Test total");
+  t.stop();
 
   // should be approx 6.7695
   EXPECT_GE(result, 6.76945);

@@ -44,13 +44,13 @@ double QLAmericanPut::getNodeValue(double currentValue, double futureValue, int 
 }
 
 // Zubair European
-double ZubairEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
-  return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-}
-
-double ZubairEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-}
+// double ZubairEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
+//   return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+// }
+// 
+// double ZubairEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+//   return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+// }
 
 double ZubairEuropeanPut::getExerciseValue(int currentStep, int numUpMovements) {
   return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);

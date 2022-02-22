@@ -161,8 +161,13 @@ class ZubairEuropeanCall: public ZubairConfig {
       double dividendYield
     ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+  
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+      return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+    }
 };
 
 class ZubairEuropeanPut: public ZubairConfig {

@@ -8,24 +8,18 @@ int main(int argc, char* argv[])
 
   // general vs. original implementation
   t.start();
-  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.stop();
-  t.reportTotal("QL general framework");
-
-  t.start();
-  Binomial::binomialTraversal<Binomial::ZubairEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.stop();
-  t.reportTotal("Zubair general framework");
-
-  t.start();
   Binomial::qlEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.stop();
-  t.reportTotal("QL European Call");
+  t.reportNext("QL European Call");
 
-  t.start();
+  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportNext("QL general framework");
+
   Binomial::zubairEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportNext("Zubair European Call");
+
+  Binomial::binomialTraversal<Binomial::ZubairEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportNext("Zubair general framework");
   t.stop();
-  t.reportTotal("Zubair European Call");
 
   // large number of steps
   // t.start();
