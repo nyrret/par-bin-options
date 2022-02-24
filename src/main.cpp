@@ -6,6 +6,8 @@
 #include "binomial.h"
 
 int main(int argc, char* argv[]) {
+  (void)argc;
+  (void)argv;
   // // american call from python american-call-option
   // // should be approx 6.8421, from QL, or 6.8586 from calc
   // double americanCallQL = Binomial::binomialTraversal<Binomial::QLAmericanCall>(

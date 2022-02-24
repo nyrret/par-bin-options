@@ -12,17 +12,17 @@ namespace Binomial {
 class OptionConfig {
   public:
     explicit OptionConfig(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
       double riskFreeRate)
-    : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {}
+    : steps_{steps}, deltaT_{deltaT}, S_{S}, K_{K}, riskFreeRate_{riskFreeRate} {}
 
     double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
-    inline double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+    inline double getBinomialValue(double currentValue, double futureValue) {
       return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
     }
     inline double getSpotPrice(int currentStep, int numUpMovements) {
@@ -30,7 +30,7 @@ class OptionConfig {
     }
 
   public: // TODO
-    uint32_t steps_;
+    int steps_;
     double deltaT_;
     double S_;  // initial price
     double K_;  // strike price
@@ -43,8 +43,6 @@ class OptionConfig {
 static inline __attribute__((always_inline)) double getBinomialValueHelper(
   double currentValue, 
   double futureValue,
-  int currentStep, 
-  int numUpMovements,
   double pu,
   double pd,
   double riskFreeRate,
@@ -67,7 +65,7 @@ static inline __attribute__((always_inline)) double getSpotPriceHelper(
 class QuantLibConfig : public OptionConfig {
   public:
     explicit QuantLibConfig(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -87,7 +85,7 @@ class QuantLibConfig : public OptionConfig {
 class QLEuropeanCall: public QuantLibConfig { // TODO inherits
   public: 
     explicit QLEuropeanCall(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -136,7 +134,7 @@ class QLEuropeanCall: public QuantLibConfig { // TODO inherits
   //   }
 
   // public: // TODO: protected
-  //   uint32_t steps_;
+  //   int steps_;
   //   double deltaT_;
   //   double S_;  // initial price
   //   double K_;  // strike price
@@ -149,7 +147,7 @@ class QLEuropeanCall: public QuantLibConfig { // TODO inherits
 class QLEuropeanPut: public QuantLibConfig {
   public: 
     explicit QLEuropeanPut(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -165,7 +163,7 @@ class QLEuropeanPut: public QuantLibConfig {
 class QLAmericanCall: public QuantLibConfig {
   public: 
     explicit QLAmericanCall(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -181,7 +179,7 @@ class QLAmericanCall: public QuantLibConfig {
 class QLAmericanPut: public QuantLibConfig {
   public: 
     explicit QLAmericanPut(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -199,7 +197,7 @@ class QLAmericanPut: public QuantLibConfig {
 class ZubairConfig : public OptionConfig {
   public: 
     explicit ZubairConfig(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -218,7 +216,7 @@ class ZubairConfig : public OptionConfig {
 class ZubairEuropeanCall: public ZubairConfig {
   public: 
     explicit ZubairEuropeanCall(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -234,7 +232,7 @@ class ZubairEuropeanCall: public ZubairConfig {
 class ZubairEuropeanPut: public ZubairConfig {
   public: 
     explicit ZubairEuropeanPut(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -250,7 +248,7 @@ class ZubairEuropeanPut: public ZubairConfig {
 class ZubairAmericanCall: public ZubairConfig {
   public: 
     explicit ZubairAmericanCall(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -266,7 +264,7 @@ class ZubairAmericanCall: public ZubairConfig {
 class ZubairAmericanPut: public ZubairConfig {
   public: 
     explicit ZubairAmericanPut(
-      uint32_t steps,
+      int steps,
       double deltaT,
       double S,
       double K,
@@ -280,7 +278,7 @@ class ZubairAmericanPut: public ZubairConfig {
 };
 
 template <class Config>
-double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double binomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   // TODO: put this back in if use inheritance
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
@@ -315,7 +313,7 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
 }
 
 template <class Config>
-double parallelBinomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double parallelBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   // TODO: put back in if use inheritance
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
@@ -347,7 +345,7 @@ double parallelBinomialTraversal(uint32_t steps, uint16_t expirationTime, double
 }
 
 template <class Config>
-double stencilBinomialTraversal(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   // TODO: put this back in if use inheritance
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
