@@ -16,8 +16,9 @@ int main(int argc, char* argv[])
   t.reportNext("QL European Call");
 
   // general vs. original implementation
-  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL general framework");
+  std::cout << "result: " << result << std::endl;
 
   // t.start();
   // Binomial::zubairEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);

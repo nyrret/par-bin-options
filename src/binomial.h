@@ -295,7 +295,8 @@ double binomialTraversal(uint32_t steps, uint16_t expirationTime, double S, doub
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-    p.push_back(config.getExerciseValue(i, steps+1)); if (p[i] < 0) {
+    p.push_back(config.getExerciseValue(i, steps+1)); 
+    if (p[i] < 0) {
       p[i] = 0;
     }
   }

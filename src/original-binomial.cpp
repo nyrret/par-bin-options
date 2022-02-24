@@ -11,28 +11,28 @@ namespace Binomial {
  * S -- stock price
  * K -- strike price
  */
-double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
-  Timer t = Timer();
-  t.start();
+double qlEuropeanCall(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividend_yield) {
+  // Timer t = Timer();
+  // t.start();
   double deltaT = (double)expirationTime/steps/365;
+  std::cout << "deltaT: " << deltaT << std::endl;
   double dx = volatility * sqrt(deltaT);
   double up = exp(volatility * sqrt(deltaT));
-  double down = 1/up;
 
   double drift_per_step = (riskFreeRate - dividend_yield - 0.5 * volatility * volatility) * deltaT;
   double pu = 0.5 + 0.5 * drift_per_step / dx;
   double pd = 1-pu;
-  t.reportNext("Init values");
+  // t.reportNext("Init values");
 
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-     p.push_back(S * pow(up, 2*i - steps) - K);
+     p.push_back(std::max(S * pow(up, 2*i - steps) - K, 0.0));
     if (p[i] < 0) {
         p[i] = 0;
     }
   }
-  t.reportNext("Init values at expiration time");
+  // t.reportNext("Init values at expiration time");
 
   // move to earlier times
   for (int j = steps; j >= 0; --j) {
@@ -41,7 +41,7 @@ double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double 
       p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);
     }
   }
-  t.reportNext("Compute binomial values");
+  // t.reportNext("Compute binomial values");
 
   return p[0];
 }
@@ -109,7 +109,7 @@ double qlEuropeanCall(uint32_t steps, uint16_t expirationTime, double S, double 
  * expirationTime -- in days
  * This one is inspired by Thurman, but does the same thing as zubair
  */ 
-double zubairEuropeanCall(uint32_t N, uint16_t expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
+double zubairEuropeanCall(int N, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
   double dt = (double)expirationTime/N/365;
 
   double u = exp(volatility*sqrt(dt));
