@@ -15,7 +15,6 @@ double qlEuropeanCall(int steps, int expirationTime, double S, double K, double 
   // Timer t = Timer();
   // t.start();
   double deltaT = (double)expirationTime/steps/365;
-  std::cout << "deltaT: " << deltaT << std::endl;
   double dx = volatility * sqrt(deltaT);
   double up = exp(volatility * sqrt(deltaT));
 

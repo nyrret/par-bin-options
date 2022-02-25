@@ -283,12 +283,12 @@ double binomialTraversal(int steps, int expirationTime, double S, double K, doub
   // static_assert(std::is_base_of<OptionConfig, Config>::value,
   //   "Config must be a derived class of OptionConfig");
 
-  Timer t = Timer{};
-  t.start();
+  // Timer t = Timer{};
+  // t.start();
   double deltaT = (double)expirationTime/steps/365;
 
   Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
-  t.reportNext("Init Config");
+  // t.reportNext("Init Config");
 
   // initial values at expiration time
   std::vector<double> p;
@@ -298,7 +298,7 @@ double binomialTraversal(int steps, int expirationTime, double S, double K, doub
       p[i] = 0;
     }
   }
-  t.reportNext("Init values at expiration time");
+  // t.reportNext("Init values at expiration time");
 
   // move to earlier times 
   for (int j = steps; j >= 0; --j) {
@@ -307,7 +307,7 @@ double binomialTraversal(int steps, int expirationTime, double S, double K, doub
       p[i] = config.getNodeValue(p[i], p[i+1], i, j);
     }
   }
-  t.reportNext("Compute binomial values");
+  // t.reportNext("Compute binomial values");
 
   return p[0];
 }
