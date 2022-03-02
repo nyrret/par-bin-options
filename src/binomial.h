@@ -344,6 +344,27 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
   return p[0];
 }
 
+// ==========================================================
+// =============Stencil Computation==========================
+// ==========================================================
+
+void stencilTriangle(std::vector<double> &p, int blockSize, double pu);
+//   for (int i = 0; i < blockSize; i++) {
+//     for (int j = 0; j < blockSize-i; j++) {
+//       p[j] = pu * p[j+1] + (1-pu) * p[j];
+//     }
+//   }
+// }
+
+void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu);
+//   for (int i = 0; i < m1-1; i++) {
+//     for (int j = 0; j < m2; j++) {
+//       p[startIndex+j+m1-i] = pu * p[startIndex+j+m1-i+1] + 
+//         (1-pu) * p[startIndex+j+m1-i];
+//     }
+//   }
+// }
+
 template <class Config>
 double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
   // TODO: put this back in if use inheritance
@@ -364,11 +385,17 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
   }
 
   // stencil computation
-  for (int j = steps; j >= 0; --j) {
-    for (int i = 0; i < j; ++i) {
-      // binomial value
-      p[i] = config.getNodeValue(p[i], p[i+1], i, j);
+  const int cacheCapacity = 7;  // TODO -- m in paper
+  const int blockSize = (cacheCapacity+1)/2; // TODO
+  const int numBlocks = (steps+1)/blockSize; // TODO -- how is this determined
+
+  stencilTriangle(p, blockSize, config.pu_);
+  for (int i = 1; i < numBlocks; i++) {
+    stencilRhombus(p, (i-1)*blockSize + 1, blockSize, blockSize, config.pu_);
+    for (int j = 1; j <= i-1; j++) {
+      stencilRhombus(p, (i-j-1)*blockSize + 1, blockSize+1, blockSize, config.pu_);
     }
+    stencilTriangle(p, blockSize+1, config.pu_);
   }
 
   return p[0];

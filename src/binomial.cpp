@@ -84,4 +84,24 @@ double ZubairAmericanPut::getExerciseValue(int currentStep, int numUpMovements) 
 double ZubairAmericanPut::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
   return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
 }
+
+// ================= Stencil Computation ===================
+
+void stencilTriangle(std::vector<double> &p, int blockSize, double pu) {
+  for (int i = 0; i < blockSize; i++) {
+    for (int j = 0; j < blockSize-i; j++) {
+      p[j] = pu * p[j+1] + (1-pu) * p[j];
+    }
+  }
+}
+
+void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu) {
+  for (int i = 0; i < m1-1; i++) {
+    for (int j = 0; j < m2; j++) {
+      p[startIndex+j+m1-i] = pu * p[startIndex+j+m1-i+1] + 
+        (1-pu) * p[startIndex+j+m1-i];
+    }
+  }
+}
+
 }  // namespace Binomial
