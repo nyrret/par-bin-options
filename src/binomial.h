@@ -349,21 +349,8 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // ==========================================================
 
 void stencilTriangle(std::vector<double> &p, int blockSize, double pu);
-//   for (int i = 0; i < blockSize; i++) {
-//     for (int j = 0; j < blockSize-i; j++) {
-//       p[j] = pu * p[j+1] + (1-pu) * p[j];
-//     }
-//   }
-// }
 
 void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu);
-//   for (int i = 0; i < m1-1; i++) {
-//     for (int j = 0; j < m2; j++) {
-//       p[startIndex+j+m1-i] = pu * p[startIndex+j+m1-i+1] + 
-//         (1-pu) * p[startIndex+j+m1-i];
-//     }
-//   }
-// }
 
 template <class Config>
 double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
