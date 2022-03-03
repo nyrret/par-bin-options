@@ -385,6 +385,16 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
     stencilTriangle(p, blockSize+1, config.pu_);
   }
 
+  // extra blocks in case did not divide evenly
+  const int edgeBlockSize = (steps+1)%blockSize;
+  stencilRhombus(
+    p, (numBlocks-1)*blockSize + 1, blockSize, edgeBlockSize, config.pu_);
+  for (int i = 1; i < numBlocks; i++) {
+    stencilRhombus(
+      p, (numBlocks-i-1)*blockSize + 1, blockSize+1, edgeBlockSize, config.pu_);
+  }
+  stencilTriangle(p, edgeBlockSize+1, config.pu_);
+
   return p[0];
 }
 }  // namespace Binomial
