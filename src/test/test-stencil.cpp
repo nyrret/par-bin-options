@@ -24,6 +24,17 @@ TEST(BinomialTest, stencilTriangleTest)
   EXPECT_LT(result, 18.55685);
 }
 
+TEST(BinomialTest, stencilTwoBlockTest)
+{
+  // test case with number of blocks = 1 such that only tests on triangle
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    7, 365*7, 100, 100, 0, 0.25);
+
+  // should be approx 26.7855
+  EXPECT_GE(result, 26.78545);
+  EXPECT_LT(result, 26.78555);
+}
+
 int main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);

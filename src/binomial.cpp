@@ -88,8 +88,8 @@ double ZubairAmericanPut::getNodeValue(double currentValue, double futureValue, 
 // ================= Stencil Computation ===================
 
 void stencilTriangle(std::vector<double> &p, int blockSize, double pu) {
-  for (int i = 0; i < blockSize-1; i++) {
-    for (int j = 0; j < blockSize; j++) {
+  for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
+    for (int j = 0; j < blockSize-i; j++) {  // elts in that row
       p[j] = pu * p[j+1] + (1-pu) * p[j];
     }
   }
@@ -98,8 +98,8 @@ void stencilTriangle(std::vector<double> &p, int blockSize, double pu) {
 void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu) {
   for (int i = 0; i < m1-1; i++) {
     for (int j = 0; j < m2; j++) {
-      p[startIndex+j+m1-i] = pu * p[startIndex+j+m1-i+1] + 
-        (1-pu) * p[startIndex+j+m1-i];
+      p[startIndex+j+m1-i-1] = pu * p[startIndex+j+m1-i] + 
+        (1-pu) * p[startIndex+j+m1-i-1];
     }
   }
 }
