@@ -87,21 +87,35 @@ double ZubairAmericanPut::getNodeValue(double currentValue, double futureValue, 
 
 // ================= Stencil Computation ===================
 
-void stencilTriangle(std::vector<double> &p, int blockSize, double pu) {
-  for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
-    for (int j = 0; j < blockSize-i; j++) {  // elts in that row
-      p[j] = pu * p[j+1] + (1-pu) * p[j];
-    }
-  }
-}
+// void stencilTriangle(
+//   std::vector<double> &p, 
+//   int blockSize, 
+//   double pu, 
+//   ZubairEuropeanCall *config
+// ) {
+//   for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
+//     for (int j = 0; j < blockSize-i; j++) {  // elts in that row
+//       //p[j] = (pu * p[j+1] + (1-pu) * p[j])*exp(-riskFreeRate*deltaT);
+//       p[j] = config->getNodeValue(p[j], p[j+1], j, i);
+//     }
+//   }
+// }
 
-void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu) {
-  for (int i = 0; i < m1-1; i++) {
-    for (int j = 0; j < m2; j++) {
-      p[startIndex+j+m1-i-1] = pu * p[startIndex+j+m1-i] + 
-        (1-pu) * p[startIndex+j+m1-i-1];
-    }
-  }
-}
+// void stencilRhombus(
+//   std::vector<double> &p, 
+//   int startIndex, 
+//   int m1, 
+//   int m2, 
+//   double pu,
+//   double riskFreeRate,
+//   double deltaT
+// ) {
+//   for (int i = 0; i < m1-1; i++) {
+//     for (int j = 0; j < m2; j++) {
+//       p[startIndex+j+m1-i-1] = (pu * p[startIndex+j+m1-i] + 
+//         (1-pu) * p[startIndex+j+m1-i-1])*exp(-riskFreeRate*deltaT);
+//     }
+//   }
+// }
 
 }  // namespace Binomial

@@ -325,7 +325,8 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
-    p.push_back(config.getExerciseValue(i, steps+1)); if (p[i] < 0) {
+    p.push_back(config.getExerciseValue(i, steps+1)); 
+    if (p[i] < 0) {
       p[i] = 0;
     }
   }
@@ -348,9 +349,39 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // =============Stencil Computation==========================
 // ==========================================================
 
-void stencilTriangle(std::vector<double> &p, int blockSize, double pu);
+// void stencilTriangle(std::vector<double> &p, int blockSize, double pu,
+//   ZubairEuropeanCall *config);
 
-void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, double pu);
+// void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, 
+//   double pu, double riskFreeRate, double deltaT);
+
+template <class Config>
+void stencilTriangle(std::vector<double> &p, int blockSize, Config &config) {
+  for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
+    for (int j = 0; j < blockSize-i; j++) {  // elts in that row
+      //p[j] = (pu * p[j+1] + (1-pu) * p[j])*exp(-riskFreeRate*deltaT);
+      p[j] = config.getNodeValue(p[j], p[j+1], j, i);
+    }
+  }
+}
+
+template <class Config>
+void stencilRhombus(
+  std::vector<double> &p, 
+  int startIndex, 
+  int m1, 
+  int m2, 
+  Config &config
+) {
+  for (int i = 0; i < m1-1; i++) {
+    for (int j = 0; j < m2; j++) {
+      p[startIndex+j+m1-i-1] = config.getNodeValue(
+        p[startIndex+j+m1-i-1], p[startIndex+m1+j-i], j, i);
+      // p[startIndex+j+m1-i-1] = (pu * p[startIndex+j+m1-i] + 
+      //   (1-pu) * p[startIndex+j+m1-i-1])*exp(-riskFreeRate*deltaT);
+    }
+  }
+}
 
 template <class Config>
 double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
@@ -372,28 +403,43 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
   }
 
   // stencil computation
-  const int cacheCapacity = 7;  // TODO -- m in paper
-  const int blockSize = (cacheCapacity+1)/2; // TODO
-  const int numBlocks = (steps+1)/blockSize; // TODO -- how is this determined
+  // TODO -- compile-time constant, can take param at compile-time
+  const int cacheCapacity = 7;   
+  const int blockSize = (cacheCapacity+1)/2; 
+  const int numBlocks = (steps+1)/blockSize; 
 
-  stencilTriangle(p, blockSize, config.pu_);
+  stencilTriangle(p, blockSize, config);
   for (int i = 1; i < numBlocks; i++) {
-    stencilRhombus(p, (i-1)*blockSize + 1, blockSize, blockSize, config.pu_);
+    stencilRhombus(
+      p, 
+      (i-1)*blockSize + 1, 
+      blockSize, 
+      blockSize, 
+      config
+    );
     for (int j = 1; j <= i-1; j++) {
-      stencilRhombus(p, (i-j-1)*blockSize + 1, blockSize+1, blockSize, config.pu_);
+      stencilRhombus(
+        p, 
+        (i-j-1)*blockSize + 1, 
+        blockSize+1, 
+        blockSize, 
+        config
+      );
     }
-    stencilTriangle(p, blockSize+1, config.pu_);
+    stencilTriangle(p, blockSize+1, config);
   }
 
   // extra blocks in case did not divide evenly
   const int edgeBlockSize = (steps+1)%blockSize;
-  stencilRhombus(
-    p, (numBlocks-1)*blockSize + 1, blockSize, edgeBlockSize, config.pu_);
-  for (int i = 1; i < numBlocks; i++) {
+  if (edgeBlockSize > 0) {
     stencilRhombus(
-      p, (numBlocks-i-1)*blockSize + 1, blockSize+1, edgeBlockSize, config.pu_);
+      p, (numBlocks-1)*blockSize + 1, blockSize, edgeBlockSize, config);
+    for (int i = 1; i < numBlocks; i++) {
+      stencilRhombus(
+        p, (numBlocks-i-1)*blockSize + 1, blockSize+1, edgeBlockSize, config);
+    }
+    stencilTriangle(p, edgeBlockSize+1, config);
   }
-  stencilTriangle(p, edgeBlockSize+1, config.pu_);
 
   return p[0];
 }

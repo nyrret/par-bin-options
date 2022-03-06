@@ -55,6 +55,16 @@ TEST(BinomialTest, stencilOneOverDividingEvenly)
   EXPECT_LT(result, 26.78555);
 }
 
+TEST(BinomialTest, stencilOriginalTest)
+{
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    100, 252, 127.62, 130, 0.001, 0.20, 0.0163); 
+
+  // should be approx 6.7695
+  EXPECT_GE(result, 6.76945);
+  EXPECT_LT(result, 6.76955);
+}
+
 int main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);
