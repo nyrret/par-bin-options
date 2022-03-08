@@ -351,11 +351,11 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 
 template <class Config>
 void stencilTriangle(std::vector<double> &p, int blockSize, Config &config) {
-  //for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
-  //  for (int j = 0; j < blockSize-i; j++) {  // elts in that row
-  for (int i = blockSize-2; i >= 0; --i) { 
-    for (int j = 0; j < i+2; ++j) {
-      p[j] = config.getNodeValue(p[j], p[j+1], j, i+1);
+  for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
+    for (int j = 0; j < blockSize-i; j++) {  // elts in that row
+  // for (int i = blockSize-2; i >= 0; --i) { 
+  //   for (int j = 0; j < i+2; ++j) {
+      p[j] = config.getNodeValue(p[j], p[j+1], j, blockSize-1-i);
     }
   }
 }
@@ -373,7 +373,7 @@ void stencilRhombus(
   // for (int i = m1-1; i >= 0; --i) {
   //   for (int j = 0; j < m2; ++j) {
       p[startIndex+j+m1-i-1] = config.getNodeValue(
-        p[startIndex+j+m1-i-1], p[startIndex+m1+j-i], j, i);
+        p[startIndex+j+m1-i-1], p[startIndex+m1+j-i], startIndex+j, startIndex+m1-1-i);
     }
   }
 }
