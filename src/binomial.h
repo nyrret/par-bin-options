@@ -349,18 +349,13 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // =============Stencil Computation==========================
 // ==========================================================
 
-// void stencilTriangle(std::vector<double> &p, int blockSize, double pu,
-//   ZubairEuropeanCall *config);
-
-// void stencilRhombus(std::vector<double> &p, int startIndex, int m1, int m2, 
-//   double pu, double riskFreeRate, double deltaT);
-
 template <class Config>
 void stencilTriangle(std::vector<double> &p, int blockSize, Config &config) {
-  for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
-    for (int j = 0; j < blockSize-i; j++) {  // elts in that row
-      //p[j] = (pu * p[j+1] + (1-pu) * p[j])*exp(-riskFreeRate*deltaT);
-      p[j] = config.getNodeValue(p[j], p[j+1], j, i);
+  //for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
+  //  for (int j = 0; j < blockSize-i; j++) {  // elts in that row
+  for (int i = blockSize-2; i >= 0; --i) { 
+    for (int j = 0; j < i+2; ++j) {
+      p[j] = config.getNodeValue(p[j], p[j+1], j, i+1);
     }
   }
 }
@@ -375,10 +370,10 @@ void stencilRhombus(
 ) {
   for (int i = 0; i < m1-1; i++) {
     for (int j = 0; j < m2; j++) {
+  // for (int i = m1-1; i >= 0; --i) {
+  //   for (int j = 0; j < m2; ++j) {
       p[startIndex+j+m1-i-1] = config.getNodeValue(
         p[startIndex+j+m1-i-1], p[startIndex+m1+j-i], j, i);
-      // p[startIndex+j+m1-i-1] = (pu * p[startIndex+j+m1-i] + 
-      //   (1-pu) * p[startIndex+j+m1-i-1])*exp(-riskFreeRate*deltaT);
     }
   }
 }
