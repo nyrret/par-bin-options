@@ -24,6 +24,10 @@ int main(int argc, char* argv[])
   std::cout << "general: " << result2 << std::endl;
   // std::cout << "result: " << result << std::endl;
 
+  double stencilResult = Binomial::stencilBinomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportNext("QL stencil");
+  std::cout << "stencilResult: " << stencilResult << std::endl;
+
   // t.start();
   // Binomial::zubairEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   // t.stop();
