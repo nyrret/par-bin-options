@@ -14,12 +14,14 @@ int main(int argc, char* argv[])
   // t.reportTotal("Zubair general framework");
 
   t.start();
-  Binomial::qlEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  double result = Binomial::qlEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  std::cout << "original: " << result << std::endl;
   t.reportNext("QL European Call");
 
   // general vs. original implementation
-  Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  double result2 = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL general framework");
+  std::cout << "general: " << result2 << std::endl;
   // std::cout << "result: " << result << std::endl;
 
   // t.start();

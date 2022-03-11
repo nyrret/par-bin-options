@@ -24,10 +24,21 @@ TEST(BinomialTest, stencilTriangleTest)
   EXPECT_LT(result, 18.55685);
 }
 
-TEST(BinomialTest, stencilAmericanTriangleTest)
+TEST(BinomialTest, stencilAmericanCallTriangleTest)
 {
   // test case with number of blocks = 1 such that only tests on triangle
   double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanCall>(
+    3, 365*3, 100, 100, 0, 0.25);
+
+  // should be approx 18.5568
+  EXPECT_GE(result, 18.55675);
+  EXPECT_LT(result, 18.55685);
+}
+
+TEST(BinomialTest, stencilAmericanPutTriangleTest)
+{
+  // test case with number of blocks = 1 such that only tests on triangle
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanPut>(
     3, 365*3, 100, 100, 0, 0.25);
 
   // should be approx 18.5568
@@ -44,6 +55,39 @@ TEST(BinomialTest, stencilTwoBlockTest)
   // should be approx 26.7855
   EXPECT_GE(result, 26.78545);
   EXPECT_LT(result, 26.78555);
+}
+
+TEST(BinomialTest, stencilAmericanPutTwoBlockTest)
+{
+  // test case with number of blocks = 2 such that only tests on one rhombus and two triangles
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanPut>(
+    7, 365*7, 100, 100, 0, 0.25);
+
+  // should be approx 26.7855
+  EXPECT_GE(result, 26.78545);
+  EXPECT_LT(result, 26.78555);
+}
+
+TEST(BinomialTest, stencilAmericanCallTwoBlockTest)
+{
+  // test case with number of blocks = 2 such that only tests on one rhombus and two triangles
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanCall>(
+    7, 365*7, 100, 100, 0, 0.25);
+
+  // should be approx 26.7855
+  EXPECT_GE(result, 26.78545);
+  EXPECT_LT(result, 26.78555);
+}
+
+TEST(BinomialTest, stencilAmericanCallThreeBlockTest)
+{
+  // test case with number of blocks = 2 such that only tests on one rhombus and two triangles
+  double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanCall>(
+    11, 365*11, 100, 100, 0, 0.25);
+
+  // should be approx 32.8111
+  EXPECT_GE(result, 32.81105);
+  EXPECT_LT(result, 32.81115);
 }
 
 TEST(BinomialTest, stencilDoesntDivideEvenly)
