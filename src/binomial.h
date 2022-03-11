@@ -349,10 +349,12 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // =============Stencil Computation==========================
 // ==========================================================
 
-// numTrianglesAbove -- how many triangles are above this triangle
+// level -- how many levels deep bottom of this triangle is
+//  (top point in entire stencil computation is at level 1)
 template <class Config>
 void stencilTriangle(
-  std::vector<double> &p, int m1, int blockSize, bool isOnBottom, int numTrianglesAbove, Config &config) {
+  // std::vector<double> &p, int m1, int blockSize, bool isOnBottom, int numTrianglesAbove, Config &config) {
+  std::vector<double> &p, int m1, bool isOnBottom, int level, Config &config) {
   // for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
   //   for (int j = 0; j < blockSize-i; j++) {  // elts in that row
   for (int i = 0; i < m1-1; i++) {  // number of rows in triangle to look at
@@ -361,18 +363,21 @@ void stencilTriangle(
   //   for (int j = 0; j < i+2; ++j) {
       // p[j] = config.getNodeValue(p[j], p[j+1], j, blockSize-1-i);
       p[j] = config.getNodeValue(
-        p[j], p[j+1], j, (numTrianglesAbove+1)*blockSize-isOnBottom-i);
+        p[j], p[j+1], j, level-isOnBottom-i);
+        // p[j], p[j+1], j, (numTrianglesAbove+1)*blockSize-isOnBottom-i);
     }
   }
 }
 
+// level -- how many levels deep bottom of this rhombus is
+//  (top point in entire stencil computation is at level 1)
 template <class Config>
 void stencilRhombus(
   std::vector<double> &p, 
   int startIndex, 
   int m1, 
   int m2, 
-  int numRhombusesAbove,
+  int level,
   bool isOnBottom,
   Config &config
 ) {
@@ -384,7 +389,8 @@ void stencilRhombus(
         p[startIndex+j+m1-i-2], 
         p[startIndex+m1+j-i-1], 
         startIndex+j+m1-i-2, // startIndex+j, 
-        (numRhombusesAbove+2)*m2-isOnBottom-i // startIndex+m1-2-i
+        level-isOnBottom-i // startIndex+m1-2-i
+        // (numRhombusesAbove+2)*m2-isOnBottom-i // startIndex+m1-2-i
       );
     }
   }
@@ -414,15 +420,16 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
   const int cacheCapacity = 7;   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
+  const int edgeBlockSize = (steps+1)%blockSize;
 
-  stencilTriangle(p, blockSize, blockSize, true, numBlocks-1, config);
+  stencilTriangle(p, blockSize, true, numBlocks*blockSize + edgeBlockSize, config);
   for (int i = 1; i < numBlocks; i++) {
     stencilRhombus(
       p, 
       (i-1)*blockSize + 1, 
       blockSize, 
       blockSize, 
-      numBlocks-2,
+      numBlocks*blockSize + edgeBlockSize,
       true,
       config
     );
@@ -432,24 +439,38 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
         (i-j-1)*blockSize + 1, 
         blockSize+1, 
         blockSize, 
-        numBlocks-2-j,
+        (numBlocks-j)*blockSize + edgeBlockSize,
         false,
         config
       );
     }
-    stencilTriangle(p, blockSize+1, blockSize, false, numBlocks-1-i, config);
+    stencilTriangle(
+      p, blockSize+1, false, (numBlocks-i)*blockSize + edgeBlockSize, config);
   }
 
   // extra blocks in case did not divide evenly
-  const int edgeBlockSize = (steps+1)%blockSize;
   if (edgeBlockSize > 0) {
     stencilRhombus(
-      p, (numBlocks-1)*blockSize + 1, blockSize, edgeBlockSize, numBlocks-1, true, config);
+      p, 
+      (numBlocks-1)*blockSize + 1, 
+      blockSize, 
+      edgeBlockSize, 
+      numBlocks*blockSize + edgeBlockSize, 
+      true, 
+      config
+    );
     for (int i = 1; i < numBlocks; i++) {
       stencilRhombus(
-        p, (numBlocks-i-1)*blockSize + 1, blockSize+1, edgeBlockSize, numBlocks-1-i, false, config);
+        p, 
+        (numBlocks-i-1)*blockSize + 1, 
+        blockSize+1, 
+        edgeBlockSize, 
+        (numBlocks-i)*blockSize + edgeBlockSize, 
+        false, 
+        config
+      );
     }
-    stencilTriangle(p, edgeBlockSize+1, edgeBlockSize, false, 0, config);
+    stencilTriangle(p, edgeBlockSize+1, false, edgeBlockSize, config);
   }
 
   return p[0];
