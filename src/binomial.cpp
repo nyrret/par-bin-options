@@ -10,20 +10,24 @@ namespace Binomial {
 // }
 
 // QL European 
-// double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
-//   return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-// }
-// 
-// double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-//   return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-// }
+double QLEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
+  return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+}
+
+double QLEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+  (void)currentStep;
+  (void)numUpMovements;
+  return getBinomialValue(currentValue, futureValue);
+}
 
 double QLEuropeanPut::getExerciseValue(int currentStep, int numUpMovements) {
   return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
 }
 
 double QLEuropeanPut::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+  (void)currentStep;
+  (void)numUpMovements;
+  return getBinomialValue(currentValue, futureValue);
 }
 
 // QL American
@@ -32,7 +36,7 @@ double QLAmericanCall::getExerciseValue(int currentStep, int numUpMovements) {
 }
 
 double QLAmericanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue, currentStep, numUpMovements));
+  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
 }
 
 double QLAmericanPut::getExerciseValue(int currentStep, int numUpMovements) {
@@ -40,24 +44,28 @@ double QLAmericanPut::getExerciseValue(int currentStep, int numUpMovements) {
 }
 
 double QLAmericanPut::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue, currentStep, numUpMovements));
+  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
 }
 
 // Zubair European
-// double ZubairEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
-//   return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-// }
-// 
-// double ZubairEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-//   return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-// }
+double ZubairEuropeanCall::getExerciseValue(int currentStep, int numUpMovements) {
+  return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+}
+
+double ZubairEuropeanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+  (void)currentStep;
+  (void)numUpMovements;
+  return getBinomialValue(currentValue, futureValue);
+}
 
 double ZubairEuropeanPut::getExerciseValue(int currentStep, int numUpMovements) {
   return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
 }
 
 double ZubairEuropeanPut::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+  (void)currentStep;
+  (void)numUpMovements;
+  return getBinomialValue(currentValue, futureValue);
 }
 
 // Zubair American
@@ -66,7 +74,7 @@ double ZubairAmericanCall::getExerciseValue(int currentStep, int numUpMovements)
 }
 
 double ZubairAmericanCall::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue, currentStep, numUpMovements));
+  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
 }
 
 double ZubairAmericanPut::getExerciseValue(int currentStep, int numUpMovements) {
@@ -74,6 +82,6 @@ double ZubairAmericanPut::getExerciseValue(int currentStep, int numUpMovements) 
 }
 
 double ZubairAmericanPut::getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue, currentStep, numUpMovements));
+  return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
 }
 }  // namespace Binomial

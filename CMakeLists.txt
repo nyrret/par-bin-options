@@ -7,6 +7,12 @@ project(ParallelQuantLib VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_BUILD_TYPE Release)
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 add_subdirectory(external/googletest)
 add_subdirectory(src)
 add_subdirectory(src/test)
@@ -24,6 +30,7 @@ find_package(Parlay CONFIG REQUIRED)
 # add the executables
 add_executable(ParallelQuantLib src/main.cpp)
 add_executable(Test src/test/test.cpp)
+add_executable(StencilTest src/test/test-stencil.cpp)
 add_executable(PerfTest src/perf-test.cpp)
 
 # link libraries
@@ -32,6 +39,10 @@ target_link_libraries(ParallelQuantLib PRIVATE Parlay::parlay)
 
 target_link_libraries(Test PRIVATE gtest_main) # link gtest to this executable
 target_link_libraries(Test PRIVATE Source) 
+target_link_libraries(Test PRIVATE OriginalBinomial) 
+
+target_link_libraries(StencilTest PRIVATE gtest_main) # link gtest to this executable
+target_link_libraries(StencilTest PRIVATE Source) 
 
 target_link_libraries(PerfTest PRIVATE gtest_main) # link gtest to this executable
 target_link_libraries(PerfTest PRIVATE Source) 

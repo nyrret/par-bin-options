@@ -1,15 +1,31 @@
 #include <gtest/gtest.h>
 #include "binomial.h"
-#include "gettime.h"
+#include "original-binomial.h"
+
+
+// ============= Original tests ================
+TEST(BinomialTest, originalEuropeanCallQLTest)
+{
+  double result = Binomial::qlEuropeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 6.7695
+  EXPECT_GE(result, 6.76945);
+  EXPECT_LT(result, 6.76955);
+}
+
+TEST(BinomialTest, originalEuropeanCallZubairTest)
+{
+  double result = Binomial::zubairEuropeanCall(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+
+  // should be approx 6.7695
+  EXPECT_GE(result, 6.76945);
+  EXPECT_LT(result, 6.76955);
+}
 
 // ============= QuantLib tests ================
 TEST(BinomialTest, europeanCallQLTest)
 {
-  Timer t = Timer{};
-  t.start();
-  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.reportTotal("Test total");
-  t.stop();
+  double result = Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100, 252, 127.62, 130, 0.001, 0.20, 0.0163);
 
   // should be approx 6.7695
   EXPECT_GE(result, 6.76945);
