@@ -219,6 +219,20 @@ TEST(BinomialTest, americanPutZubairTest)
   EXPECT_LT(result, 10.48815);
 }
 
+// ==============Parallel Stencil Test=====================
+
+// Test with just 2 blocks
+TEST(BinomialTest, parStencilEuropeanCallQLTest)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::QLEuropeanCall>(
+    7, 7*365, 50, 50, 0, 0.25);
+
+  // should be approx 13.3565
+  EXPECT_GE(result, 13.35645);
+  EXPECT_LT(result, 13.35655);
+}
+
+
 int main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest(&argc, argv);
