@@ -44,25 +44,25 @@ class OptionConfig {
     double modifier_;
 };
 
-static inline __attribute__((always_inline)) double getBinomialValueHelper(
-  double currentValue, 
-  double futureValue,
-  double pu,
-  double pd,
-  double riskFreeRate,
-  double deltaT
-) {
-  return (pu * futureValue + pd * currentValue)*exp(-riskFreeRate*deltaT);
-}
-
-static inline __attribute__((always_inline)) double getSpotPriceHelper(
-  int currentStep, 
-  int numUpMovements,
-  double S,
-  double up
-) {
-  return S * pow(up, 2*currentStep - (numUpMovements - 1));
-}
+// static inline __attribute__((always_inline)) double getBinomialValueHelper(
+//   double currentValue, 
+//   double futureValue,
+//   double pu,
+//   double pd,
+//   double riskFreeRate,
+//   double deltaT
+// ) {
+//   return (pu * futureValue + pd * currentValue)*exp(-riskFreeRate*deltaT);
+// }
+// 
+// static inline __attribute__((always_inline)) double getSpotPriceHelper(
+//   int currentStep, 
+//   int numUpMovements,
+//   double S,
+//   double up
+// ) {
+//   return S * pow(up, 2*currentStep - (numUpMovements - 1));
+// }
 
 // ==========QuantLib=======================
 
