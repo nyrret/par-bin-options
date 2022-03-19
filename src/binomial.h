@@ -17,13 +17,16 @@ class OptionConfig {
       double S,
       double K,
       double riskFreeRate)
-    : steps_{steps}, deltaT_{deltaT}, S_{S}, K_{K}, riskFreeRate_{riskFreeRate} {}
+    : steps_{steps}, deltaT_{deltaT}, S_{S}, K_{K}, riskFreeRate_{riskFreeRate} {
+      modifier_ = exp(-riskFreeRate*deltaT);
+    }
 
     double getExerciseValue(int currentStep, int numUpMovements);
     double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
 
     inline double getBinomialValue(double currentValue, double futureValue) {
-      return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+      // return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+      return (pu_ * futureValue + pd_ * currentValue)*modifier_;
     }
     inline double getSpotPrice(int currentStep, int numUpMovements) {
       return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
@@ -38,6 +41,7 @@ class OptionConfig {
     double pu_;
     double pd_;
     double up_;
+    double modifier_;
 };
 
 static inline __attribute__((always_inline)) double getBinomialValueHelper(

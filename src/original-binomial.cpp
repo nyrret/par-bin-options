@@ -34,10 +34,11 @@ double qlEuropeanCall(int steps, int expirationTime, double S, double K, double 
   // t.reportNext("Init values at expiration time");
 
   // move to earlier times
+  double modifier = exp(-riskFreeRate*deltaT);
   for (int j = steps; j >= 0; --j) {
     for (int i = 0; i < j; ++i) {
       // binomial value
-      p[i] = (pu * p[i+1] + pd * p[i]) * exp(-riskFreeRate*deltaT);
+      p[i] = (pu * p[i+1] + pd * p[i]) * modifier;
     }
   }
   // t.reportNext("Compute binomial values");
