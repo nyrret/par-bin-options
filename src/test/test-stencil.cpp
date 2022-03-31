@@ -221,15 +221,26 @@ TEST(BinomialTest, americanPutZubairTest)
 
 // ==============Parallel Stencil Test=====================
 
-// Test with just 2 blocks
-TEST(BinomialTest, parStencilEuropeanCallQLTest)
+TEST(BinomialTest, parTriangleTest)
 {
-  double result = Binomial::parallelStencilBinomialTraversal<Binomial::QLEuropeanCall>(
-    7, 7*365, 50, 50, 0, 0.25);
+  // test case with number of blocks = 1 such that only tests on triangle
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    3, 365*3, 100, 100, 0, 0.25);
 
-  // should be approx 13.3565
-  EXPECT_GE(result, 13.35645);
-  EXPECT_LT(result, 13.35655);
+  // should be approx 18.5568
+  EXPECT_GE(result, 18.55675);
+  EXPECT_LT(result, 18.55685);
+}
+
+// Test with just 2 blocks
+TEST(BinomialTest, parTwoBlockTest)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    7, 7*365, 100, 100, 0, 0.25);
+
+  // should be approx 26.7855
+  EXPECT_GE(result, 26.78545);
+  EXPECT_LT(result, 26.78555);
 }
 
 
