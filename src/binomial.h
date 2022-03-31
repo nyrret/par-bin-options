@@ -50,9 +50,10 @@ class OptionConfig {
 //   double pu,
 //   double pd,
 //   double riskFreeRate,
-//   double deltaT
+//   double deltaT,
+//   double modifier
 // ) {
-//   return (pu * futureValue + pd * currentValue)*exp(-riskFreeRate*deltaT);
+//   return (pu * futureValue + pd * currentValue)*modifier;
 // }
 // 
 // static inline __attribute__((always_inline)) double getSpotPriceHelper(
@@ -86,7 +87,8 @@ class QuantLibConfig : public OptionConfig {
     }
 };
 
-class QLEuropeanCall: public QuantLibConfig { // TODO inherits
+// class QLEuropeanCall : public QuantLibConfig { // TODO original
+class QLEuropeanCall : public OptionConfig { 
   public: 
     explicit QLEuropeanCall(
       int steps,
@@ -96,46 +98,46 @@ class QLEuropeanCall: public QuantLibConfig { // TODO inherits
       double riskFreeRate,
       double volatility,
       double dividendYield
-    ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
-    // TODO replace constructor body with above line
+    // ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
+    ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
     // ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-    //   double dx = volatility * sqrt(deltaT);
-    //   double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-    //   pu_ = 0.5 + 0.5 * drift_per_step / dx;
-    //   pd_ = 1-pu_;
+      double dx = volatility * sqrt(deltaT);
+      double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
+      pu_ = 0.5 + 0.5 * drift_per_step / dx;
+      pd_ = 1-pu_;
 
-    //   up_ = exp(volatility * sqrt(deltaT));
-    // }
+      up_ = exp(volatility * sqrt(deltaT));
+    }
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
-  //   inline __attribute__((always_inline)) double getExerciseValue(int currentStep, int numUpMovements) {
-  //     return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
-  //     // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
-  //   }
-  //   inline __attribute__((always_inline)) double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  //     // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
-  //     return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-  //   }
+    // double getExerciseValue(int currentStep, int numUpMovements);
+    // double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) {
+      return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
+      // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+      // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+      return (pu_ * futureValue + pd_ * currentValue)*modifier_;
+    }
 
-  //   // TODO: everything below here is from OptionConfig
-  //   inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-  //     return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
-  //     // return getBinomialValueHelper(
-  //     //   currentValue,
-  //     //   futureValue,
-  //     //   currentStep,
-  //     //   numUpMovements,
-  //     //   pu_,
-  //     //   pd_,
-  //     //   riskFreeRate_,
-  //     //   deltaT_
-  //     // );
-  //   }
-  //   inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
-  //     return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
-  //     // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
-  //   }
+   // TODO: everything below here is from OptionConfig
+   // inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
+   //   return (pu_ * futureValue + pd_ * currentValue)*modifier_;
+   //   // return getBinomialValueHelper(
+   //   //   currentValue,
+   //   //   futureValue,
+   //   //   currentStep,
+   //   //   numUpMovements,
+   //   //   pu_,
+   //   //   pd_,
+   //   //   riskFreeRate_,
+   //   //   deltaT_
+   //   // );
+   // }
+   // inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
+   //   return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
+   //   // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
+   // }
 
   // public: // TODO: protected
   //   int steps_;
@@ -146,6 +148,7 @@ class QLEuropeanCall: public QuantLibConfig { // TODO inherits
   //   double pu_;
   //   double pd_;
   //   double up_;
+  //   double modifier_;
 };
 
 class QLEuropeanPut: public QuantLibConfig {
