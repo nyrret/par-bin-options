@@ -634,23 +634,25 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
   }
 
   if (edgeBlockSize > 0) {
-    parallelStencilRhombus(
-      p, 
-      pastEdgePoints,
-      pastEdgePoints,
-      (numBlocks-1)*blockSize,
-      blockSize,
-      edgeBlockSize,
-      triangleLevel-blockSize,
-      config
-    );
+    parallelStencilTriangle(
+      p, pastEdgePoints, numBlocks*blockSize, edgeBlockSize, triangleLevel, config);
+    // parallelStencilRhombus(
+    //   p, 
+    //   pastEdgePoints,
+    //   pastEdgePoints,
+    //   (numBlocks-1)*blockSize,
+    //   blockSize,
+    //   edgeBlockSize,
+    //   triangleLevel-blockSize,
+    //   config
+    // );
   }
 
   // TODO -- finish the computation for normal sizes
   // TODO -- make this actually parallel
   // std::vector<double> pastValues(steps+1);
   // rows are zero-indexed, 0 is bottom
-  for (int row = 1; row < numBlocks; row++) {  
+  for (int row = 1; row < numBlocks+1; row++) {  
     // p.swap(pastValues); -- TODO
     // compute rhombuses in a row in the same loop
     // (bottom to top)
@@ -677,10 +679,10 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
         p, 
         pastEdgePoints,
         currEdgePoints,
-        (numBlocks-row-1)*blockSize,
+        (numBlocks-row)*blockSize,
         blockSize,
         edgeBlockSize,
-        (numBlocks-row-1)*blockSize + edgeBlockSize,
+        (numBlocks-row)*blockSize + edgeBlockSize,
         config
       );
     }
