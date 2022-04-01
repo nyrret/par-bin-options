@@ -254,6 +254,35 @@ TEST(BinomialTest, parThreeBlockTest)
   EXPECT_LT(result, 32.81115);
 }
 
+TEST(BinomialTest, parOneTriangleOneEdgeBlock)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    4, 365*4, 100, 100, 0, 0.25);
+
+  // should be approx 18.5568
+  EXPECT_GE(result, 18.55675);
+  EXPECT_LT(result, 18.55685);
+}
+
+TEST(BinomialTest, parOneOverDividingEvenly)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    8, 365*8, 100, 100, 0, 0.25);
+
+  // should be approx 26.7855
+  EXPECT_GE(result, 26.78545);
+  EXPECT_LT(result, 26.78555);
+}
+
+TEST(BinomialTest, parDoesntDivideEvenly)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    9, 365*9, 100, 100, 0, 0.25);
+
+  // should be approx 29.9802
+  EXPECT_GE(result, 29.98015);
+  EXPECT_LT(result, 29.98025);
+}
 
 int main(int argc, char* argv[])
 {
