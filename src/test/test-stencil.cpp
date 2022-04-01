@@ -81,7 +81,7 @@ TEST(BinomialTest, stencilAmericanCallTwoBlockTest)
 
 TEST(BinomialTest, stencilAmericanCallThreeBlockTest)
 {
-  // test case with number of blocks = 2 such that only tests on one rhombus and two triangles
+  // test case with number of blocks = 3 
   double result = Binomial::stencilBinomialTraversal<Binomial::ZubairAmericanCall>(
     11, 365*11, 100, 100, 0, 0.25);
 
@@ -241,6 +241,17 @@ TEST(BinomialTest, parTwoBlockTest)
   // should be approx 26.7855
   EXPECT_GE(result, 26.78545);
   EXPECT_LT(result, 26.78555);
+}
+
+TEST(BinomialTest, parThreeBlockTest)
+{
+  // test case with number of blocks = 3 
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    11, 365*11, 100, 100, 0, 0.25);
+
+  // should be approx 32.8111
+  EXPECT_GE(result, 32.81105);
+  EXPECT_LT(result, 32.81115);
 }
 
 
