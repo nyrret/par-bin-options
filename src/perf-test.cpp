@@ -21,11 +21,9 @@ int main(int argc, char* argv[])
   t.reportNext("QL stencil");
   std::cout << "stencilResult: " << stencilResult << std::endl;
 
-  Binomial::zubairEuropeanCall(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.reportNext("Zubair European Call");
-
-  Binomial::binomialTraversal<Binomial::ZubairEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
-  t.reportNext("Zubair general framework");
+  double parStencilResult = Binomial::parallelStencilBinomialTraversal<Binomial::QLEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  t.reportNext("QL par stencil");
+  std::cout << "parStencilResult: " << parStencilResult << std::endl;
   t.stop();
   // t.start();
   // Binomial::binomialTraversal<Binomial::ZubairEuropeanCall>(20000, 252, 127.62, 130, 0.001, 0.20, 0.0163);

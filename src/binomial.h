@@ -660,8 +660,8 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
     // compute rhombuses in a row in the same loop
     // (bottom to top)
     // TODO: make actually parallel
-    // parlay::parallel_for(0, numBlocks-i, [&](int j) {
-    for (int j = 0; j < numBlocks-row; j++) {
+    parlay::parallel_for(0, numBlocks-row, [&](int j) {
+    // for (int j = 0; j < numBlocks-row; j++) {
       // std::cout << "rhombus " << j << " in row " << row << std::endl;
       parallelStencilRhombus(
         p, 
@@ -673,8 +673,8 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
         (numBlocks-row)*blockSize + edgeBlockSize,
         config
       );
-    }
-    // });
+    // }
+    });
 
     // do the edge block if needed
     if (edgeBlockSize > 0) {
