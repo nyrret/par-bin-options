@@ -264,6 +264,17 @@ TEST(BinomialTest, parOneTriangleOneEdgeBlock)
   EXPECT_LT(result, 18.55685);
 }
 
+TEST(BinomialTest, parFifteenSteps)
+{
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    15, 365*15, 100, 100, 0, 0.25);
+
+  // should be approx 37.7015
+  EXPECT_GE(result, 37.70145);
+  EXPECT_LT(result, 37.70155);
+}
+
+
 TEST(BinomialTest, parOneTriangleOneEdgeBlockSize2)
 {
   double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(

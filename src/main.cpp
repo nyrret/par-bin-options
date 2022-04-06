@@ -8,6 +8,9 @@
 int main(int argc, char* argv[]) {
   (void)argc;
   (void)argv;
+  double result = Binomial::parallelStencilBinomialTraversal<Binomial::ZubairEuropeanCall>(
+    5, 365*5, 100, 100, 0, 0.25);
+  std::cout << "result: " << result << std::endl;
   // // american call from python american-call-option
   // // should be approx 6.8421, from QL, or 6.8586 from calc
   // double americanCallQL = Binomial::binomialTraversal<Binomial::QLAmericanCall>(
