@@ -423,7 +423,7 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
 
   // stencil computation
   // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = 7;   
+  const int cacheCapacity = std::min(128000, steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
@@ -491,57 +491,102 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
 template <class Config>
 void parallelStencilTriangle(
   // std::vector<double> &p, int m1, int blockSize, bool isOnBottom, int numTrianglesAbove, Config &config) {
-  std::vector<double> &p, int startIndex, int m1, int level, Config &config) {
+  std::vector<double> &p, 
+  std::vector<double> &edgePoints,
+  int startIndex, 
+  int m1, 
+  int triangleSize,
+  int level, 
+  Config &config
+) {
   // for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
   //   for (int j = 0; j < blockSize-i; j++) {  // elts in that row
-  for (int i = 0; i < m1-1; i++) {  // number of rows in triangle to look at
-    for (int j = 0; j < m1-i-1; j++) {  // elts in that row
+  for (int i = 0; i < triangleSize-1; i++) {  // number of rows in triangle to look at
+    for (int j = 0; j < triangleSize-i-1; j++) {  // elts in that row
   // for (int i = blockSize-2; i >= 0; --i) { 
   //   for (int j = 0; j < i+2; ++j) {
       // p[j] = config.getNodeValue(p[j], p[j+1], j, blockSize-1-i);
-      std::cout << startIndex+j << ", " << level-1-i << std::endl;
-      p[startIndex+j] = config.getNodeValue(
+      // std::cout << startIndex+j << ", " << level-1-i << std::endl;
+      double value = config.getNodeValue(
         p[startIndex+j], p[startIndex+j+1], startIndex+j, level-1-i);  // -1 because all the triangles are on the bottom, so start one row up
+      p[startIndex+j] = value;
+
+      // point is on triangle left edge and not in leftmost triangle,
+      // so later shapes will need to refer to these points
+      if (startIndex != 0 && j == 0) {
+        // +1 because we don't store the bottommost point in the triangle
+        edgePoints[startIndex-m1+i+1] = value;
+      }
     }
   }
 }
 
 // level -- how many levels deep the left bottom corner of this rhombus is
 //  (top point in entire stencil computation is at level 1)
+// startIndex -- where the left edge is
 template <class Config>
 void parallelStencilRhombus(
   std::vector<double> &p, 
-  std::vector<double> &pastValues,
+  std::vector<double> &pastEdgePoints,
+  std::vector<double> &currEdgePoints,
   int startIndex, 
   int m1, 
+  int width,
   int level,
   Config &config
 ) {
+  // std::cout << "rhombus" << std::endl;
   // up until middle row
   for (int i = 0; i < m1; i++) {  // row 
-    for (int j = 0; j < i+1; j++) {  // column
+    int rowLen = std::min(i+1, width);
+    for (int j = 0; j < rowLen; j++) {  // column
       // start at bottom right point, and go up to middle row
       // go left to right in each row
-      std::cout << startIndex+(m1-i-1)+j << ", " << level+(m1-i-1) << std::endl;
-      p[startIndex+(m1-i-1)+j] = config.getNodeValue(
-        pastValues[startIndex+(m1-i-1)+j],   // current value
-        pastValues[startIndex+(m1-i-1)+j+1],   // future value
-        startIndex+(m1-i-1)+j, 
-        level+(m1-i-1) 
-      );
+      // std::cout << startIndex+(m1-i-1)+j << ", " << level+(m1-i-1) << std::endl;
+      
+      // point on the right edge -- need to look at edges array
+      if (j == i) {  // first check to ensure not an edge block
+        double value = config.getNodeValue(
+          p[startIndex+(m1-i-1)+j],   // current value
+          pastEdgePoints[startIndex+i],   // future value 
+          startIndex+(m1-i-1)+j, 
+          level+(m1-i-1) 
+        );
+        p[startIndex+(m1-i-1)+j] = value;
+      } else {
+        double value = config.getNodeValue(
+          p[startIndex+(m1-i-1)+j],   // current value
+          p[startIndex+(m1-i-1)+j+1],   // future value
+          startIndex+(m1-i-1)+j, 
+          level+(m1-i-1) 
+        );
+        p[startIndex+(m1-i-1)+j] = value;
+
+        // on the left edge of rhombus with other rhombuses to the left of it
+        if (startIndex != 0 && i == m1-1 && j == 0) {
+          currEdgePoints[startIndex-m1] = value;
+        }
+      } 
     }
   }
-  std::cout << "top part" << std::endl;
+  // std::cout << "top part" << std::endl;
   // up above middle row until top point
-  for (int i = 0; i < m1-1; i++) {  // row
-    for (int j = 0; j < m1-i-1; j++) {  // column
-      std::cout << startIndex+j << ", " << level-i-1 << std::endl;
-      p[startIndex+j] = config.getNodeValue(
-        pastValues[startIndex+j],   // current value
-        pastValues[startIndex+j+1],   // future value
+  for (int i = 0; i < width-1; i++) {  // row
+    int rowLen = std::min(m1-i-1, width-i-1);
+    for (int j = 0; j < rowLen; j++) {  // column
+      // std::cout << startIndex+j << ", " << level-i-1 << std::endl;
+      double value = config.getNodeValue(
+        p[startIndex+j],   // current value
+        p[startIndex+j+1],   // future value
         startIndex+j,
         level-i-1   
       );
+      p[startIndex+j] = value;
+
+      // on left edge of rhombus with other rhombuses to left of it
+      if (startIndex != 0 && j == 0) {
+        currEdgePoints[startIndex-m1+i+1] = value;
+      }
     }
   }
 }
@@ -556,6 +601,20 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
 
   Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
+  // stencil computation
+  // TODO -- compile-time constant, can take param at compile-time
+  const int cacheCapacity = std::min(4000, steps);   
+  const int blockSize = (cacheCapacity+1)/2; 
+  const int numBlocks = (steps+1)/blockSize; 
+  const int edgeBlockSize = (steps+1)%blockSize;
+
+  // stores the points on the left edge of the previous row of shapes,
+  // starting from the second shape in the row and indexing bottom to top
+  std::vector<double> pastEdgePoints;
+  pastEdgePoints.reserve(blockSize*(numBlocks-1)+edgeBlockSize);
+  std::vector<double> currEdgePoints;
+  currEdgePoints.reserve(blockSize*(numBlocks-1)+edgeBlockSize);
+
   // initial values at expiration time
   std::vector<double> p;
   for (int i = 0; i < steps+1; ++i) {
@@ -563,49 +622,78 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
     if (p[i] < 0) {
       p[i] = 0;
     }
+  
+    // the edge point of a triangle in the bottom left corner
+    if (i != 0 && i % blockSize == 0) {
+      pastEdgePoints[i-blockSize] = p[i];
+    }
   }
-
-  // stencil computation
-  // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = 7;   
-  const int blockSize = (cacheCapacity+1)/2; 
-  const int numBlocks = (steps+1)/blockSize; 
-  const int edgeBlockSize = (steps+1)%blockSize;
 
   // compute bottom row of triangles
   // TODO -- parallelize this? 
   int triangleLevel = numBlocks*blockSize + edgeBlockSize;
   for (int i = 0; i < numBlocks; i++) {
-    std::cout << "triangle " << i << std::endl;
+    // std::cout << "triangle " << i << std::endl;
     parallelStencilTriangle(
-      p, i*blockSize, blockSize, triangleLevel, config);
+      p, pastEdgePoints, i*blockSize, blockSize, blockSize, triangleLevel, config);
+  }
+
+  if (edgeBlockSize > 0) {
+    parallelStencilTriangle(
+      p, pastEdgePoints, numBlocks*blockSize, blockSize, edgeBlockSize, triangleLevel, config);
+    // parallelStencilRhombus(
+    //   p, 
+    //   pastEdgePoints,
+    //   pastEdgePoints,
+    //   (numBlocks-1)*blockSize,
+    //   blockSize,
+    //   edgeBlockSize,
+    //   triangleLevel-blockSize,
+    //   config
+    // );
   }
 
   // TODO -- finish the computation for normal sizes
   // TODO -- make this actually parallel
   // std::vector<double> pastValues(steps+1);
   // rows are zero-indexed, 0 is bottom
-  for (int row = 1; row < numBlocks; row++) {  
+  for (int row = 1; row < numBlocks+1; row++) {  
     // p.swap(pastValues); -- TODO
     // compute rhombuses in a row in the same loop
     // (bottom to top)
     // TODO: make actually parallel
-    // parlay::parallel_for(0, numBlocks-i, [&](int j) {
-    for (int j = 0; j < numBlocks-row; j++) {
-      std::cout << "rhombus " << j << " in row " << row << std::endl;
+    parlay::parallel_for(0, numBlocks-row, [&](int j) {
+    // for (int j = 0; j < numBlocks-row; j++) {
+      // std::cout << "rhombus " << j << " in row " << row << std::endl;
       parallelStencilRhombus(
         p, 
-        p,
+        pastEdgePoints,
+        currEdgePoints,
         j*blockSize,
+        blockSize,
         blockSize,
         (numBlocks-row)*blockSize + edgeBlockSize,
         config
       );
-    }
-    // });
-  }
+    // }
+    });
 
-  // TODO -- finish for edge blocks
+    // do the edge block if needed
+    if (edgeBlockSize > 0) {
+      parallelStencilRhombus(
+        p, 
+        pastEdgePoints,
+        currEdgePoints,
+        (numBlocks-row)*blockSize,
+        blockSize,
+        edgeBlockSize,
+        (numBlocks-row)*blockSize + edgeBlockSize,
+        config
+      );
+    }
+
+    pastEdgePoints.swap(currEdgePoints); 
+  }
 
   return p[0];
 }  // end parallelStencilBinomialTraversal
