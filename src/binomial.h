@@ -21,18 +21,17 @@ class OptionConfig {
       modifier_ = exp(-riskFreeRate*deltaT);
     }
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    double getExerciseValue(int currentStep, int numUpMovements) const;
+    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const;
 
-    inline double getBinomialValue(double currentValue, double futureValue) {
-      // return (pu_ * futureValue + pd_ * currentValue)*exp(-riskFreeRate_*deltaT_);
+    inline double getBinomialValue(double currentValue, double futureValue) const {
       return (pu_ * futureValue + pd_ * currentValue)*modifier_;
     }
-    inline double getSpotPrice(int currentStep, int numUpMovements) {
+    inline double getSpotPrice(int currentStep, int numUpMovements) const {
       return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
     }
 
-  public: // TODO
+  protected: 
     int steps_;
     double deltaT_;
     double S_;  // initial price
@@ -43,27 +42,6 @@ class OptionConfig {
     double up_;
     double modifier_;
 };
-
-// static inline __attribute__((always_inline)) double getBinomialValueHelper(
-//   double currentValue, 
-//   double futureValue,
-//   double pu,
-//   double pd,
-//   double riskFreeRate,
-//   double deltaT,
-//   double modifier
-// ) {
-//   return (pu * futureValue + pd * currentValue)*modifier;
-// }
-// 
-// static inline __attribute__((always_inline)) double getSpotPriceHelper(
-//   int currentStep, 
-//   int numUpMovements,
-//   double S,
-//   double up
-// ) {
-//   return S * pow(up, 2*currentStep - (numUpMovements - 1));
-// }
 
 // ==========QuantLib=======================
 
@@ -98,56 +76,15 @@ class QLEuropeanCall : public QuantLibConfig {
       double volatility,
       double dividendYield
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
-    // ) : OptionConfig(steps, deltaT, S, K, riskFreeRate) {
-    // ) : steps_{steps}, S_{S}, K_{K}, deltaT_{deltaT}, riskFreeRate_{riskFreeRate} {
-    //   double dx = volatility * sqrt(deltaT);
-    //   double drift_per_step = (riskFreeRate - dividendYield - 0.5 * volatility * volatility) * deltaT;
-    //   pu_ = 0.5 + 0.5 * drift_per_step / dx;
-    //   pd_ = 1-pu_;
 
-    //   up_ = exp(volatility * sqrt(deltaT));
-    // }
-
-    // double getExerciseValue(int currentStep, int numUpMovements);
-    // double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
-    inline double getExerciseValue(int currentStep, int numUpMovements) {
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
       return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
-      // return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
     }
-    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-      // return getBinomialValue(currentValue, futureValue, currentStep, numUpMovements);
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      (void)currentStep;
+      (void)numUpMovements;
       return (pu_ * futureValue + pd_ * currentValue)*modifier_;
     }
-
-   // TODO: everything below here is from OptionConfig
-   // inline __attribute__((always_inline)) double getBinomialValue(double currentValue, double futureValue, int currentStep, int numUpMovements) {
-   //   return (pu_ * futureValue + pd_ * currentValue)*modifier_;
-   //   // return getBinomialValueHelper(
-   //   //   currentValue,
-   //   //   futureValue,
-   //   //   currentStep,
-   //   //   numUpMovements,
-   //   //   pu_,
-   //   //   pd_,
-   //   //   riskFreeRate_,
-   //   //   deltaT_
-   //   // );
-   // }
-   // inline __attribute__((always_inline)) double getSpotPrice(int currentStep, int numUpMovements) {
-   //   return S_ * pow(up_, 2*currentStep - (numUpMovements - 1));
-   //   // return getSpotPriceHelper(currentStep, numUpMovements, S_, up_);
-   // }
-
-  // public: // TODO: protected
-  //   int steps_;
-  //   double deltaT_;
-  //   double S_;  // initial price
-  //   double K_;  // strike price
-  //   double riskFreeRate_;
-  //   double pu_;
-  //   double pd_;
-  //   double up_;
-  //   double modifier_;
 };
 
 class QLEuropeanPut: public QuantLibConfig {
@@ -162,8 +99,15 @@ class QLEuropeanPut: public QuantLibConfig {
       double dividendYield
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
+    }
+    
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      (void)currentStep;
+      (void)numUpMovements;
+      return getBinomialValue(currentValue, futureValue);
+    }
 };
 
 class QLAmericanCall: public QuantLibConfig {
@@ -178,8 +122,14 @@ class QLAmericanCall: public QuantLibConfig {
       double dividendYield
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+    
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
+    }
+
 };
 
 class QLAmericanPut: public QuantLibConfig {
@@ -194,8 +144,13 @@ class QLAmericanPut: public QuantLibConfig {
       double dividendYield
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
+    }
+
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
+    }
 };
 
 // ==============Zubair=======================
@@ -231,8 +186,16 @@ class ZubairEuropeanCall: public ZubairConfig {
       double dividendYield
     ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      (void)currentStep;
+      (void)numUpMovements;
+      return getBinomialValue(currentValue, futureValue);
+    }
+
 };
 
 class ZubairEuropeanPut: public ZubairConfig {
@@ -247,8 +210,16 @@ class ZubairEuropeanPut: public ZubairConfig {
       double dividendYield
     ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
+    }
+
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      (void)currentStep;
+      (void)numUpMovements;
+      return getBinomialValue(currentValue, futureValue);
+    }
+
 };
 
 class ZubairAmericanCall: public ZubairConfig {
@@ -263,8 +234,14 @@ class ZubairAmericanCall: public ZubairConfig {
       double dividendYield
     ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
+    }
+
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
+    }
+
 };
 
 class ZubairAmericanPut: public ZubairConfig {
@@ -279,22 +256,24 @@ class ZubairAmericanPut: public ZubairConfig {
       double dividendYield
     ) : ZubairConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
-    double getExerciseValue(int currentStep, int numUpMovements);
-    double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements);
+    inline double getExerciseValue(int currentStep, int numUpMovements) const {
+      return std::max(K_ - getSpotPrice(currentStep, numUpMovements), 0.0);
+    }
+
+    inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
+      return std::max(getExerciseValue(currentStep, numUpMovements), getBinomialValue(currentValue, futureValue));
+    }
 };
 
 template <class Config>
 double binomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
-  // TODO: put this back in if use inheritance
-  // static_assert(std::is_base_of<OptionConfig, Config>::value,
-  //   "Config must be a derived class of OptionConfig");
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
 
-  // Timer t = Timer{};
-  // t.start();
-  double deltaT = (double)expirationTime/steps/365;
+  const double deltaT = (double)expirationTime/steps/365;
 
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
-  // t.reportNext("Init Config");
+  const Config config = Config{
+    steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // initial values at expiration time
   std::vector<double> p;
@@ -304,7 +283,6 @@ double binomialTraversal(int steps, int expirationTime, double S, double K, doub
       p[i] = 0;
     }
   }
-  // t.reportNext("Init values at expiration time");
 
   // move to earlier times 
   for (int j = steps; j >= 0; --j) {
@@ -313,20 +291,19 @@ double binomialTraversal(int steps, int expirationTime, double S, double K, doub
       p[i] = config.getNodeValue(p[i], p[i+1], i, j);
     }
   }
-  // t.reportNext("Compute binomial values");
 
   return p[0];
 }
 
 template <class Config>
 double parallelBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
-  // TODO: put back in if use inheritance
-  // static_assert(std::is_base_of<OptionConfig, Config>::value,
-  //   "Config must be a derived class of OptionConfig");
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
 
-  double deltaT = (double)expirationTime/steps/365;
+  const double deltaT = (double)expirationTime/steps/365;
 
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
+  const Config config = Config{
+    steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // initial values at expiration time
   std::vector<double> p;
@@ -356,47 +333,37 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // ==========================================================
 
 // level -- how many levels deep bottom of this triangle is
-//  (top point in entire stencil computation is at level 1)
+//          (top point in entire stencil computation is at level 1)
 template <class Config>
-void stencilTriangle(
-  // std::vector<double> &p, int m1, int blockSize, bool isOnBottom, int numTrianglesAbove, Config &config) {
-  std::vector<double> &p, int m1, bool isOnBottom, int level, Config &config) {
-  // for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
-  //   for (int j = 0; j < blockSize-i; j++) {  // elts in that row
+inline void stencilTriangle(
+  std::vector<double> &p, int m1, bool isOnBottom, int level, const Config &config) {
   for (int i = 0; i < m1-1; i++) {  // number of rows in triangle to look at
     for (int j = 0; j < m1-i-1; j++) {  // elts in that row
-  // for (int i = blockSize-2; i >= 0; --i) { 
-  //   for (int j = 0; j < i+2; ++j) {
-      // p[j] = config.getNodeValue(p[j], p[j+1], j, blockSize-1-i);
       p[j] = config.getNodeValue(
         p[j], p[j+1], j, level-isOnBottom-i);
-        // p[j], p[j+1], j, (numTrianglesAbove+1)*blockSize-isOnBottom-i);
     }
   }
 }
 
 // level -- how many levels deep bottom of this rhombus is
-//  (top point in entire stencil computation is at level 1)
+//          (top point in entire stencil computation is at level 1)
 template <class Config>
-void stencilRhombus(
+inline void stencilRhombus(
   std::vector<double> &p, 
   int startIndex, 
   int m1, 
   int m2, 
   int level,
   bool isOnBottom,
-  Config &config
+  const Config &config
 ) {
   for (int i = 0; i < m1-1; i++) {
     for (int j = 0; j < m2; j++) {
-  // for (int i = m1-1; i >= 0; --i) {
-  //   for (int j = 0; j < m2; ++j) {
       p[startIndex+j+m1-i-2] = config.getNodeValue(
         p[startIndex+j+m1-i-2], 
         p[startIndex+m1+j-i-1], 
-        startIndex+j+m1-i-2, // startIndex+j, 
-        level-isOnBottom-i // startIndex+m1-2-i
-        // (numRhombusesAbove+2)*m2-isOnBottom-i // startIndex+m1-2-i
+        startIndex+j+m1-i-2, 
+        level-isOnBottom-i 
       );
     }
   }
@@ -404,13 +371,13 @@ void stencilRhombus(
 
 template <class Config>
 double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
-  // TODO: put this back in if use inheritance
-  // static_assert(std::is_base_of<OptionConfig, Config>::value,
-  //   "Config must be a derived class of OptionConfig");
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
 
-  double deltaT = (double)expirationTime/steps/365;
+  const double deltaT = (double)expirationTime/steps/365;
 
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
+  const Config config = Config{
+    steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // initial values at expiration time
   std::vector<double> p;
@@ -487,26 +454,19 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
 // =================================================
 
 // level -- how many levels deep bottom of this triangle is
-//  (top point in entire stencil computation is at level 1)
+//          (top point in entire stencil computation is at level 1)
 template <class Config>
-void parallelStencilTriangle(
-  // std::vector<double> &p, int m1, int blockSize, bool isOnBottom, int numTrianglesAbove, Config &config) {
+inline void parallelStencilTriangle(
   std::vector<double> &p, 
   std::vector<double> &edgePoints,
   int startIndex, 
   int m1, 
   int triangleSize,
   int level, 
-  Config &config
+  const Config &config
 ) {
-  // for (int i = 0; i < blockSize-1; i++) {  // number of rows in triangle to look at
-  //   for (int j = 0; j < blockSize-i; j++) {  // elts in that row
   for (int i = 0; i < triangleSize-1; i++) {  // number of rows in triangle to look at
     for (int j = 0; j < triangleSize-i-1; j++) {  // elts in that row
-  // for (int i = blockSize-2; i >= 0; --i) { 
-  //   for (int j = 0; j < i+2; ++j) {
-      // p[j] = config.getNodeValue(p[j], p[j+1], j, blockSize-1-i);
-      // std::cout << startIndex+j << ", " << level-1-i << std::endl;
       double value = config.getNodeValue(
         p[startIndex+j], p[startIndex+j+1], startIndex+j, level-1-i);  // -1 because all the triangles are on the bottom, so start one row up
       p[startIndex+j] = value;
@@ -522,10 +482,10 @@ void parallelStencilTriangle(
 }
 
 // level -- how many levels deep the left bottom corner of this rhombus is
-//  (top point in entire stencil computation is at level 1)
+//          (top point in entire stencil computation is at level 1)
 // startIndex -- where the left edge is
 template <class Config>
-void parallelStencilRhombus(
+inline void parallelStencilRhombus(
   std::vector<double> &p, 
   std::vector<double> &pastEdgePoints,
   std::vector<double> &currEdgePoints,
@@ -533,16 +493,13 @@ void parallelStencilRhombus(
   int m1, 
   int width,
   int level,
-  Config &config
+  const Config &config
 ) {
-  // std::cout << "rhombus" << std::endl;
-  // up until middle row
+  // start at bottom right point, and go up to middle row
+  // go left to right in each row
   for (int i = 0; i < m1; i++) {  // row 
     int rowLen = std::min(i+1, width);
     for (int j = 0; j < rowLen; j++) {  // column
-      // start at bottom right point, and go up to middle row
-      // go left to right in each row
-      // std::cout << startIndex+(m1-i-1)+j << ", " << level+(m1-i-1) << std::endl;
       
       // point on the right edge -- need to look at edges array
       if (j == i) {  // first check to ensure not an edge block
@@ -569,12 +526,11 @@ void parallelStencilRhombus(
       } 
     }
   }
-  // std::cout << "top part" << std::endl;
+
   // up above middle row until top point
   for (int i = 0; i < width-1; i++) {  // row
     int rowLen = std::min(m1-i-1, width-i-1);
     for (int j = 0; j < rowLen; j++) {  // column
-      // std::cout << startIndex+j << ", " << level-i-1 << std::endl;
       double value = config.getNodeValue(
         p[startIndex+j],   // current value
         p[startIndex+j+1],   // future value
@@ -593,13 +549,13 @@ void parallelStencilRhombus(
 
 template <class Config>
 double parallelStencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
-  // TODO: put this back in if use inheritance
-  // static_assert(std::is_base_of<OptionConfig, Config>::value,
-  //   "Config must be a derived class of OptionConfig");
+  static_assert(std::is_base_of<OptionConfig, Config>::value,
+    "Config must be a derived class of OptionConfig");
 
-  double deltaT = (double)expirationTime/steps/365;
+  const double deltaT = (double)expirationTime/steps/365;
 
-  Config config = Config{steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
+  const Config config = Config{
+    steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // stencil computation
   // TODO -- compile-time constant, can take param at compile-time
@@ -630,41 +586,28 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
   }
 
   // compute bottom row of triangles
-  // TODO -- parallelize this? 
   int triangleLevel = numBlocks*blockSize + edgeBlockSize;
   for (int i = 0; i < numBlocks; i++) {
-    // std::cout << "triangle " << i << std::endl;
     parallelStencilTriangle(
       p, pastEdgePoints, i*blockSize, blockSize, blockSize, triangleLevel, config);
   }
 
   if (edgeBlockSize > 0) {
     parallelStencilTriangle(
-      p, pastEdgePoints, numBlocks*blockSize, blockSize, edgeBlockSize, triangleLevel, config);
-    // parallelStencilRhombus(
-    //   p, 
-    //   pastEdgePoints,
-    //   pastEdgePoints,
-    //   (numBlocks-1)*blockSize,
-    //   blockSize,
-    //   edgeBlockSize,
-    //   triangleLevel-blockSize,
-    //   config
-    // );
+      p, 
+      pastEdgePoints, 
+      numBlocks*blockSize, 
+      blockSize, 
+      edgeBlockSize, 
+      triangleLevel, 
+      config
+    );
   }
 
-  // TODO -- finish the computation for normal sizes
-  // TODO -- make this actually parallel
-  // std::vector<double> pastValues(steps+1);
   // rows are zero-indexed, 0 is bottom
   for (int row = 1; row < numBlocks+1; row++) {  
-    // p.swap(pastValues); -- TODO
-    // compute rhombuses in a row in the same loop
-    // (bottom to top)
-    // TODO: make actually parallel
+    // compute rhombuses in a row in the same loop (bottom to top)
     parlay::parallel_for(0, numBlocks-row, [&](int j) {
-    // for (int j = 0; j < numBlocks-row; j++) {
-      // std::cout << "rhombus " << j << " in row " << row << std::endl;
       parallelStencilRhombus(
         p, 
         pastEdgePoints,
@@ -675,7 +618,6 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
         (numBlocks-row)*blockSize + edgeBlockSize,
         config
       );
-    // }
     });
 
     // do the edge block if needed

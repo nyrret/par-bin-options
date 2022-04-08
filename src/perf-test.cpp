@@ -10,21 +10,21 @@ int main(int argc, char* argv[])
 
   // general vs. original implementation
   t.start();
-  double result = Binomial::qlEuropeanCall(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Binomial::qlEuropeanCall(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL European Call");
   // std::cout << "result: " << result << std::endl;
 
   Binomial::binomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL general framework");
 
-  double stencilResult = Binomial::stencilBinomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Binomial::stencilBinomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL serial stencil");
   // std::cout << "stencilResult: " << stencilResult << std::endl;
 
   // Binomial::parallelBinomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   // t.reportNext("QL general parallel");
 
-  double parStencilResult = Binomial::parallelStencilBinomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
+  Binomial::parallelStencilBinomialTraversal<Binomial::QLEuropeanCall>(100000, 252, 127.62, 130, 0.001, 0.20, 0.0163);
   t.reportNext("QL par stencil");
   // std::cout << "parStencilResult: " << parStencilResult << std::endl;
   t.stop();
