@@ -421,7 +421,7 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
 
   // stencil computation
   // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = 7;   
+  const int cacheCapacity = std::min(128000, steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
@@ -601,7 +601,7 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
 
   // stencil computation
   // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = 7;   
+  const int cacheCapacity = std::min(4000, steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
