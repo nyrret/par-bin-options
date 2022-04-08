@@ -8,6 +8,11 @@
 #include <parlay/parallel.h>
 #include <parlay/sequence.h>
 
+// capacity in number of 8 byte objects able to held
+#define L3_CAPACITY 4576000
+#define L2_CAPACITY 128000
+#define L1_CAPACITY 4000
+
 namespace Binomial {
 class OptionConfig {
   public:
@@ -332,11 +337,18 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
 // =============Stencil Computation==========================
 // ==========================================================
 
-// level -- how many levels deep bottom of this triangle is
-//          (top point in entire stencil computation is at level 1)
+// m1: how many elements of the array we operate on at the base of this
+//     triangle section
+// level: how many levels deep bottom of this triangle is
+//        (top point in entire stencil computation is at level 1)
 template <class Config>
 inline void stencilTriangle(
-  std::vector<double> &p, int m1, bool isOnBottom, int level, const Config &config) {
+  std::vector<double> &p, 
+  int m1,  
+  bool isOnBottom, 
+  int level, 
+  const Config &config
+) {
   for (int i = 0; i < m1-1; i++) {  // number of rows in triangle to look at
     for (int j = 0; j < m1-i-1; j++) {  // elts in that row
       p[j] = config.getNodeValue(
@@ -345,8 +357,10 @@ inline void stencilTriangle(
   }
 }
 
-// level -- how many levels deep bottom of this rhombus is
-//          (top point in entire stencil computation is at level 1)
+// m1: height of the rhombus that we consider
+// m2: rhombus block size
+// level: how many levels deep bottom of this rhombus is
+//        (top point in entire stencil computation is at level 1)
 template <class Config>
 inline void stencilRhombus(
   std::vector<double> &p, 
@@ -370,7 +384,15 @@ inline void stencilRhombus(
 }
 
 template <class Config>
-double stencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double stencilBinomialTraversal(
+  int steps, 
+  int expirationTime, 
+  double S, 
+  double K, 
+  double riskFreeRate, 
+  double volatility, 
+  double dividendYield = 0
+) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
@@ -389,8 +411,7 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
   }
 
   // stencil computation
-  // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = std::min(128000, steps);   
+  const int cacheCapacity = std::min(L2_CAPACITY, steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
@@ -453,8 +474,11 @@ double stencilBinomialTraversal(int steps, int expirationTime, double S, double 
 // ===============Parallel Stencil==================
 // =================================================
 
-// level -- how many levels deep bottom of this triangle is
-//          (top point in entire stencil computation is at level 1)
+// edgePoints: points on the left edge of the triangle 
+// m1: triangle base that we consider (and height) (consider one row up on bottom row)
+// triangleSize: actual triagnle size
+// level: how many levels deep bottom of this triangle is
+//        (top point in entire stencil computation is at level 1)
 template <class Config>
 inline void parallelStencilTriangle(
   std::vector<double> &p, 
@@ -481,7 +505,10 @@ inline void parallelStencilTriangle(
   }
 }
 
-// level -- how many levels deep the left bottom corner of this rhombus is
+// pastEdgePoints: points on the (flat) left edge of the shape to the right of this rhombus
+// currEdgePoints: points on the (flat) left edge of the rhombus 
+// m1: height of the rhombus that we consider
+// level: how many levels deep the left bottom corner of this rhombus is
 //          (top point in entire stencil computation is at level 1)
 // startIndex -- where the left edge is
 template <class Config>
@@ -548,7 +575,15 @@ inline void parallelStencilRhombus(
 }
 
 template <class Config>
-double parallelStencilBinomialTraversal(int steps, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield = 0) {
+double parallelStencilBinomialTraversal(
+  int steps, 
+  int expirationTime, 
+  double S, 
+  double K, 
+  double riskFreeRate, 
+  double volatility, 
+  double dividendYield = 0
+) {
   static_assert(std::is_base_of<OptionConfig, Config>::value,
     "Config must be a derived class of OptionConfig");
 
@@ -558,8 +593,7 @@ double parallelStencilBinomialTraversal(int steps, int expirationTime, double S,
     steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // stencil computation
-  // TODO -- compile-time constant, can take param at compile-time
-  const int cacheCapacity = std::min(4000, steps);   
+  const int cacheCapacity = std::min(L1_CAPACITY, steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
