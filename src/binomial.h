@@ -83,7 +83,7 @@ class QLEuropeanCall : public QuantLibConfig {
     ) : QuantLibConfig(steps, deltaT, S, K, riskFreeRate, volatility, dividendYield) {}
 
     inline double getExerciseValue(int currentStep, int numUpMovements) const {
-      return std::max(S_ * pow(up_, 2*currentStep - (numUpMovements - 1)) - K_, 0.0);
+      return std::max(getSpotPrice(currentStep, numUpMovements) - K_, 0.0);
     }
     inline double getNodeValue(double currentValue, double futureValue, int currentStep, int numUpMovements) const {
       (void)currentStep;
