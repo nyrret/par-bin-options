@@ -110,23 +110,27 @@ double qlEuropeanCall(int steps, int expirationTime, double S, double K, double 
  * This one is inspired by Thurman, but does the same thing as zubair
  */ 
 double zubairEuropeanCall(int N, int expirationTime, double S, double K, double riskFreeRate, double volatility, double dividendYield) {
-  double dt = (double)expirationTime/N/365;
+  double deltaT = (double)expirationTime/N/365;
 
-  double u = exp(volatility*sqrt(dt));
+  double u = exp(volatility*sqrt(deltaT));
   double d = 1.0/u;
-  double p = (exp((riskFreeRate-dividendYield)*dt) - d)/(u-d);
+  double pu = (exp((riskFreeRate-dividendYield)*deltaT) - d)/(u-d);
 
-  std::vector<double> C;
+  std::vector<double> p;
   for (int i = 0; i < N+1; ++i) {
-    C.push_back(std::max(S*pow(u, 2*i - N) - K, 0.0));
-  }
-
-  for (int i = N-1; i >= 0; --i) {
-    for (int j = 0; j < i+1; ++j) {
-      C[j] = exp(-riskFreeRate*dt)*(p*C[j+1] + (1-p)*C[j]);
+    p.push_back(std::max(S*pow(u, 2*i - N) - K, 0.0));
+    if (p[i] < 0) {
+        p[i] = 0;
     }
   }
 
-  return C[0];
+  double modifier = exp(-riskFreeRate*deltaT);
+  for (int i = N-1; i >= 0; --i) {
+    for (int j = 0; j < i+1; ++j) {
+      p[j] = modifier*(pu*p[j+1] + (1-pu)*p[j]);
+    }
+  }
+
+  return p[0];
 }
 }  // namespace Binomial

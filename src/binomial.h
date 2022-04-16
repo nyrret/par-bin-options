@@ -326,7 +326,7 @@ double parallelBinomialTraversal(int steps, int expirationTime, double S, double
     parlay::parallel_for(0, j, [&](int i) {
       // binomial value
       p[i] = config.getNodeValue(pastValues[i], pastValues[i+1], i, j);
-    });
+    });  // grain size
     p.swap(pastValues);
   }
 
@@ -411,29 +411,33 @@ double stencilBinomialTraversal(
   }
 
   // stencil computation
-  const int cacheCapacity = std::min(L2_CAPACITY, steps);   
+  const int cacheCapacity = std::min(L2_CAPACITY, 2*steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
 
   stencilTriangle(p, blockSize, true, numBlocks*blockSize + edgeBlockSize, config);
   for (int i = 1; i < numBlocks; i++) {
+    int startIndex = (i-1)*blockSize+1;
+    int level = numBlocks*blockSize + edgeBlockSize;
     stencilRhombus(
       p, 
-      (i-1)*blockSize + 1, 
+      startIndex, // (i-1)*blockSize + 1, 
       blockSize, 
       blockSize, 
-      numBlocks*blockSize + edgeBlockSize,
+      level, // numBlocks*blockSize + edgeBlockSize,
       true,
       config
     );
     for (int j = 1; j <= i-1; j++) {
+      startIndex -= blockSize;
+      level -= blockSize;
       stencilRhombus(
         p, 
-        (i-j-1)*blockSize + 1, 
+        startIndex, // (i-j-1)*blockSize + 1, 
         blockSize+1, 
         blockSize, 
-        (numBlocks-j)*blockSize + edgeBlockSize,
+        level, //(numBlocks-j)*blockSize + edgeBlockSize,
         false,
         config
       );
@@ -593,7 +597,7 @@ double parallelStencilBinomialTraversal(
     steps, deltaT, S, K, riskFreeRate, volatility, dividendYield};
 
   // stencil computation
-  const int cacheCapacity = std::min(L1_CAPACITY, steps);   
+  const int cacheCapacity = std::min(L1_CAPACITY, 2*steps);   
   const int blockSize = (cacheCapacity+1)/2; 
   const int numBlocks = (steps+1)/blockSize; 
   const int edgeBlockSize = (steps+1)%blockSize;
@@ -652,7 +656,7 @@ double parallelStencilBinomialTraversal(
         (numBlocks-row)*blockSize + edgeBlockSize,
         config
       );
-    });
+    }, 1);  // grain size
 
     // do the edge block if needed
     if (edgeBlockSize > 0) {
