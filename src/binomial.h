@@ -50,6 +50,9 @@ class OptionConfig {
 
 // ==========QuantLib=======================
 
+// QuantLibConfig constructor logic inspired by https://www.quantlib.org/
+// (https://github.com/lballabio/QuantLib/blob/master/ql/methods/lattices/binomialtree.hpp)
+
 class QuantLibConfig : public OptionConfig {
   public:
     explicit QuantLibConfig(
@@ -159,6 +162,10 @@ class QLAmericanPut: public QuantLibConfig {
 };
 
 // ==============Zubair=======================
+
+// ZubairConfig constructor functionality inspired by Vanilla algorithm in 
+// figure 3 of the paper "High Performance Implementatino of Binomial Option
+// Pricing" by Mohammad Zubair and Ravi Mukkamala
 
 class ZubairConfig : public OptionConfig {
   public: 
