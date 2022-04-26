@@ -17,3 +17,7 @@ First, make the code via the following commands:
     cmake ..
     make # or 'cmake --build .'
     ./ParallelQuantLib
+
+# Stencil Copmutations
+
+If using the cache-optimized stencil code, ensure to update the L1, L2, and L3 cache capacities defined in binomial.h to reflect your machine.  These should be reported in terms of the number of 8-byte doubles able to be fit into the chace.
